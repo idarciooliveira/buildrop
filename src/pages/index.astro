@@ -1,25 +1,20 @@
 ---
-import "../styles/global.css";
-// Component Imports
-import Button from "../components/Button.astro";
-
-// Full Astro Component Syntax:
-// https://docs.astro.build/basics/astro-components/
+import HomeCtaSection from "../components/home/HomeCtaSection.astro";
+import HomeFaqSection from "../components/home/HomeFaqSection.astro";
+import HomeFeaturesSection from "../components/home/HomeFeaturesSection.astro";
+import HomeFooter from "../components/home/HomeFooter.astro";
+import HomeHeader from "../components/home/HomeHeader.astro";
+import HomeHeroSection from "../components/home/HomeHeroSection.astro";
+import LandingPageLayout from "../layouts/LandingPageLayout.astro";
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Astro + TailwindCSS</title>
-  </head>
-
-  <body>
-    <div class="grid place-items-center h-screen content-center">
-      <Button>Tailwind Button in Astro!</Button>
-    </div>
-  </body>
-</html>
+<LandingPageLayout title="BuildDrop - App Distribution Reimagined">
+  <HomeHeader />
+  <main class="grow">
+    <HomeHeroSection />
+    <HomeFeaturesSection />
+    <HomeFaqSection />
+    <HomeCtaSection />
+  </main>
+  <HomeFooter />
+</LandingPageLayout>

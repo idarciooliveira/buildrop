@@ -1,0 +1,119 @@
+---
+interface Feature {
+  title: string;
+  text: string;
+  bg: string;
+  icon: string;
+  blend: string;
+}
+
+const features: Feature[] = [
+  {
+    title: "Upload Build",
+    text: "Drag. Drop. Done. We automatically parse icons and manifests instantly with high-speed processing.",
+    bg: "from-green-400 to-emerald-600",
+    icon: "upload_file",
+    blend: "grayscale mix-blend-overlay",
+  },
+  {
+    title: "Manage Access",
+    text: "Create public links or invite your team securely. Fine-grained control over who sees what.",
+    bg: "from-purple-500 to-[#502274]",
+    icon: "group",
+    blend: "mix-blend-soft-light",
+  },
+  {
+    title: "Install Anywhere",
+    text: "Testers scan a QR code and install directly. No cables, no headaches, pure simplicity.",
+    bg: "from-pink-400 to-orange-400",
+    icon: "qr_code_2",
+    blend: "mix-blend-overlay",
+  },
+  {
+    title: "Unlimited History",
+    text: "Keep track of every build. Roll back anytime to compare versions or recover lost features easily.",
+    bg: "from-blue-500 to-indigo-600",
+    icon: "history",
+    blend: "mix-blend-overlay",
+  },
+  {
+    title: "Public Landing Pages",
+    text: "Create beautiful, branded download pages for your external testers. No login required.",
+    bg: "from-yellow-400 to-orange-600",
+    icon: "web",
+    blend: "",
+  },
+  {
+    title: "Slack & Discord",
+    text: "Get notified instantly in your team channels when a new build is uploaded to your account.",
+    bg: "from-indigo-500 to-purple-600",
+    icon: "notifications_active",
+    blend: "mix-blend-soft-light",
+  },
+  {
+    title: "Download Analytics",
+    text: "See who downloaded your app and when. Track adoption rates easily with detailed insights.",
+    bg: "from-teal-400 to-blue-500",
+    icon: "analytics",
+    blend: "mix-blend-overlay",
+  },
+  {
+    title: "SSO Integration",
+    text: "Secure your internal apps with your existing identity provider. Supports Google, Okta, and Azure.",
+    bg: "from-gray-700 to-black",
+    icon: "key",
+    blend: "mix-blend-overlay",
+  },
+  {
+    title: "Device Management",
+    text: "Automatically register UDIDs for iOS provisioning profiles. We detect new devices on the fly.",
+    bg: "from-pink-500 to-rose-600",
+    icon: "devices",
+    blend: "mix-blend-overlay",
+  },
+];
+---
+
+<section class="rounded-t-[4rem] bg-white py-24" id="features">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div
+      class="mb-16 flex flex-col justify-between gap-6 md:flex-row md:items-end"
+    >
+      <div>
+        <h2 class="mb-6 text-4xl font-black text-gray-900 md:text-5xl">
+          Powerful features
+        </h2>
+        <p class="max-w-lg text-xl text-gray-500">
+          Everything you need to manage your beta testing workflow, styled for
+          speed.
+        </p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+      {
+        features.map((feature) => (
+          <article
+            class={`group relative flex h-120 flex-col justify-end overflow-hidden rounded-[2.5rem] border border-white/20 bg-gradient-to-br p-8 text-white shadow-xl transition-all duration-500 hover:scale-[1.02] ${feature.bg}`}
+          >
+            <div class="absolute inset-0 opacity-40 transition-transform duration-700 group-hover:scale-110">
+              <img
+                alt="Abstract Preview"
+                class={`h-full w-full object-cover ${feature.blend}`}
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4x0_tpcZV0ziDq4uA_iaMpoC79LfegM0nAGaP9qfZ_tfNcPaycxYNjOeloSkW4Z_4chxfqQL5utQCe75g550CJeKGF8ZRiWg6pkW-m6sZ0tUmGZCIrzrcmGa5DAWVzGgS8bonnMv63fZpseQNVMR4zVQPm4CG0NhzBi7FLXoI07xS_Oqujr1xvmCjLJjRi86NLlhK3v-LTjqzWJ3jZ6yM5BeznxfcIUOzFAGL3jt9c9F31QZQZgvVMCYP_cXxuykDYpqmLN1tf9RH"
+              />
+            </div>
+            <div class="relative z-20 rounded-3xl border border-white/10 bg-black/20 p-6 backdrop-blur-md">
+              <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/30 bg-white/20 backdrop-blur-md">
+                <span class="material-symbols-outlined">{feature.icon}</span>
+              </div>
+              <h3 class="mb-2 text-2xl font-bold">{feature.title}</h3>
+              <p class="text-sm leading-relaxed text-white/80">
+                {feature.text}
+              </p>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
