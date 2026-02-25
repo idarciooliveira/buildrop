@@ -1,0 +1,44 @@
+---
+interface FaqItem {
+  q: string;
+  a: string;
+}
+
+const faqs: FaqItem[] = [
+  {
+    q: "Is it free to start?",
+    a: "Yes! BuildDrop offers a generous free tier that allows you to upload up to 5 apps and invite 10 team members. No credit card required to get started.",
+  },
+  {
+    q: "Does it work on iOS and Android?",
+    a: "Absolutely. We support both IPA (iOS) and APK/AAB (Android) files. For iOS, we help manage UDID collection, and for Android, it's as simple as install and play.",
+  },
+];
+---
+
+<section class="bg-brand-complement py-24" id="faq">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6">
+    <h2 class="mb-12 text-center text-4xl font-black text-gray-900">
+      Frequently asked questions
+    </h2>
+    <div class="space-y-4">
+      {
+        faqs.map((item, index) => (
+          <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <details class="group" open={index === 0}>
+              <summary class="flex cursor-pointer list-none items-center justify-between p-6 transition-colors hover:bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-900">{item.q}</h3>
+                <span class="material-symbols-outlined text-gray-400 transition-transform group-open:rotate-180">
+                  expand_more
+                </span>
+              </summary>
+              <div class="px-6 pt-0 pb-6 leading-relaxed text-gray-600">
+                {item.a}
+              </div>
+            </details>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
