@@ -34,10 +34,10 @@ const pricingOptions = [
     {
       pricingOptions.map((option) => (
         <article
-          class={`group relative overflow-hidden rounded-[2.5rem] border p-8 shadow-xl transition-all duration-500 hover:-translate-y-1 ${option.featured ? "border-[#502274]/50 bg-gray-900 text-white" : "border-white/30 bg-white/75 text-gray-900 backdrop-blur-sm"}`}
+          class={`group relative overflow-hidden rounded-[2.5rem] border p-8 shadow-xl transition-all duration-500 hover:-translate-y-1 ${option.featured ? "border-brand-primary/50 bg-gray-900 text-white" : "border-white/30 bg-white/75 text-gray-900 backdrop-blur-sm"}`}
         >
           <div
-            class={`pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${option.featured ? "bg-gradient-to-br from-[#8C52FF]/20 via-transparent to-[#25F45C]/20" : "bg-gradient-to-br from-[#25F45C]/10 to-[#502274]/10"}`}
+            class={`pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${option.featured ? "bg-gradient-to-br from-brand-complement/20 via-transparent to-brand-secondary/20" : "bg-gradient-to-br from-brand-secondary/10 to-brand-primary/10"}`}
           >
           </div>
           {option.featured && (
@@ -63,7 +63,7 @@ const pricingOptions = [
               {option.description}
             </p>
             <a
-              class={`mt-8 inline-flex w-full items-center justify-center rounded-full px-4 py-3 text-sm font-bold transition-all ${option.featured ? "bg-[#25F45C] text-gray-900 hover:bg-[#36ff6d]" : "bg-gray-900 text-white hover:bg-black"}`}
+              class={`mt-8 inline-flex w-full items-center justify-center rounded-full px-4 py-3 text-sm font-bold transition-all ${option.featured ? "bg-brand-secondary text-gray-900 hover:brightness-95" : "bg-gray-900 text-white hover:bg-black"}`}
               href="/"
             >
               Start distributing
