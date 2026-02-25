@@ -1,0 +1,122 @@
+---
+import LandingPageLayout from "../layouts/LandingPageLayout.astro";
+
+const pricingOptions = [
+  {
+    period: "1 month",
+    price: "$1.00",
+    description: "Perfect for quick beta rounds and short QA cycles.",
+    icon: "bolt",
+  },
+  {
+    period: "6 months",
+    price: "$4.99",
+    description: "Best for ongoing internal testing and client review loops.",
+    featured: true,
+    icon: "workspace_premium",
+  },
+  {
+    period: "1 year",
+    price: "$9.99",
+    description: "Maximum value for long-running testing programs.",
+    icon: "rocket_launch",
+  },
+];
+---
+
+<LandingPageLayout title="Pricing - BuildDrop">
+  <main class="pb-20">
+    <section class="relative overflow-hidden px-4 pt-22 pb-16 sm:px-6">
+      <div
+        class="pointer-events-none absolute top-18 left-10 h-60 w-60 rounded-full bg-[#25F45C] opacity-20 blur-[95px]"
+      >
+      </div>
+      <div
+        class="pointer-events-none absolute top-32 right-8 h-72 w-72 rounded-full bg-[#502274] opacity-20 blur-[110px]"
+      >
+      </div>
+      <div class="relative z-10 mx-auto max-w-4xl text-center">
+        <div
+          class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/60 px-3 py-1 text-xs font-bold tracking-wider text-[#502274] uppercase backdrop-blur-md"
+        >
+          <span class="h-2 w-2 animate-pulse rounded-full bg-[#25F45C]"></span>
+          Extension pricing
+        </div>
+        <h1
+          class="text-5xl leading-none font-black tracking-tight text-gray-900 sm:text-6xl md:text-7xl"
+        >
+          Keep your builds
+          <span
+            class="bg-gradient-to-br from-[#25F45C] to-[#8C52FF] bg-clip-text text-transparent"
+          >
+            live longer
+          </span>
+        </h1>
+        <p
+          class="mx-auto mt-8 max-w-2xl text-xl leading-relaxed font-medium text-gray-600 sm:text-2xl"
+        >
+          BuildDrop is free by default. You only pay when you extend a build's expiration.
+        </p>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class="grid gap-8 md:grid-cols-3">
+        {
+          pricingOptions.map((option) => (
+            <article
+              class={`group relative overflow-hidden rounded-[2.5rem] border p-8 shadow-xl transition-all duration-500 hover:-translate-y-1 ${option.featured ? "border-[#502274]/50 bg-gray-900 text-white" : "border-white/30 bg-white/75 text-gray-900 backdrop-blur-sm"}`}
+            >
+              <div
+                class={`pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${option.featured ? "bg-gradient-to-br from-[#8C52FF]/20 via-transparent to-[#25F45C]/20" : "bg-gradient-to-br from-[#25F45C]/10 to-[#502274]/10"}`}
+              >
+              </div>
+              {option.featured && (
+                <span class="relative z-10 mb-6 inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-bold tracking-wider uppercase">
+                  Most popular
+                </span>
+              )}
+              <div class="relative z-10">
+                <div
+                  class={`mb-6 flex h-12 w-12 items-center justify-center rounded-2xl ${option.featured ? "border border-white/20 bg-white/10" : "border border-gray-200 bg-white"}`}
+                >
+                  <span class="material-symbols-outlined text-xl">{option.icon}</span>
+                </div>
+                <p
+                  class={`text-sm font-semibold ${option.featured ? "text-white/80" : "text-gray-500"}`}
+                >
+                  {option.period}
+                </p>
+                <p class="mt-2 text-5xl font-black tracking-tight">{option.price}</p>
+                <p
+                  class={`mt-4 text-sm leading-relaxed ${option.featured ? "text-white/75" : "text-gray-600"}`}
+                >
+                  {option.description}
+                </p>
+                <a
+                  class={`mt-8 inline-flex w-full items-center justify-center rounded-full px-4 py-3 text-sm font-bold transition-all ${option.featured ? "bg-[#25F45C] text-gray-900 hover:bg-[#36ff6d]" : "bg-gray-900 text-white hover:bg-black"}`}
+                  href="/"
+                >
+                  Start distributing
+                </a>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="mx-auto mt-10 max-w-7xl px-4 sm:px-6">
+      <div
+        class="rounded-[2rem] border border-white/50 bg-white/70 p-8 shadow-lg backdrop-blur-sm"
+      >
+        <h2 class="text-2xl font-black text-gray-900">How pricing works</h2>
+        <ul class="mt-5 space-y-3 text-sm font-medium text-gray-700">
+          <li>• Extensions stack on top of the current expiration date.</li>
+          <li>• Expired builds cannot be extended and must be re-uploaded.</li>
+          <li>• If payment fails or is canceled, expiration dates stay unchanged.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</LandingPageLayout>

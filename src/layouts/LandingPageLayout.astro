@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import HomeHeader from "../components/home/HomeHeader.astro";
 
 interface Props {
   title: string;
@@ -22,6 +23,7 @@ const { title } = Astro.props;
     <title>{title}</title>
   </head>
   <body class="min-h-screen bg-[#F3F3F1] font-sans text-gray-900 antialiased">
+    <HomeHeader />
     <slot />
   </body>
 </html>

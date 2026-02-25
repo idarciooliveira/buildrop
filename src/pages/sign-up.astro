@@ -1,0 +1,108 @@
+---
+import "../styles/global.css";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <title>Sign up - BuildDrop</title>
+  </head>
+  <body class="min-h-screen bg-[#F3F3F1] font-sans text-gray-900 antialiased">
+    <main class="grid min-h-screen lg:grid-cols-2">
+      <section
+        class="relative hidden overflow-hidden bg-linear-to-br from-[#502274] to-[#1F1230] p-10 text-white lg:flex lg:flex-col lg:justify-between"
+      >
+        <div class="absolute inset-0 opacity-20">
+          <div class="h-full w-full bg-[radial-gradient(circle_at_20%_20%,#25F45C_0,transparent_35%),radial-gradient(circle_at_80%_80%,#8B5CF6_0,transparent_40%)]">
+          </div>
+        </div>
+        <div class="relative z-10">
+          <a href="/" class="text-4xl font-black tracking-tight">BuildDrop</a>
+          <p class="mt-6 max-w-md text-3xl leading-tight font-bold">
+            Create your account and ship app builds with confidence.
+          </p>
+          <p class="mt-4 max-w-lg text-base/7 text-white/80">
+            Manage testers, distribute links, and keep every release organized in
+            one place.
+          </p>
+        </div>
+        <div class="relative z-10 rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur">
+          <p class="text-sm font-semibold text-white/80">Get started in minutes</p>
+          <p class="mt-2 text-lg font-bold">No setup stress, just upload and share.</p>
+        </div>
+      </section>
+
+      <section class="flex items-center justify-center px-6 py-10 sm:px-10">
+        <div class="w-full max-w-md">
+          <p class="text-sm font-semibold text-gray-500">Create account</p>
+          <h1 class="mt-2 text-4xl font-black tracking-tight text-gray-900">Sign up</h1>
+          <p class="mt-3 text-sm text-gray-600">
+            Start with your email and password.
+          </p>
+
+          <form class="mt-8 space-y-5">
+            <label class="block text-sm font-semibold text-gray-700">
+              Email
+              <input
+                type="email"
+                name="email"
+                autocomplete="email"
+                placeholder="Enter your email"
+                class="mt-2 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-[#502274] focus:ring-2 focus:ring-[#502274]/20"
+              />
+            </label>
+            <label class="block text-sm font-semibold text-gray-700">
+              Password
+              <input
+                type="password"
+                name="password"
+                autocomplete="new-password"
+                placeholder="Create a password"
+                class="mt-2 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition focus:border-[#502274] focus:ring-2 focus:ring-[#502274]/20"
+              />
+            </label>
+            <button
+              type="button"
+              class="w-full rounded-xl bg-[#502274] px-4 py-3 text-base font-bold text-white transition hover:bg-[#3f195e]"
+            >
+              Sign up
+            </button>
+          </form>
+
+          <div class="my-7 flex items-center gap-4">
+            <div class="h-px grow bg-gray-300"></div>
+            <span class="text-sm font-medium text-gray-500">or continue with</span>
+            <div class="h-px grow bg-gray-300"></div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              class="flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-[#502274]/30 hover:text-[#502274]"
+            >
+              <img src="/assets/google.svg" alt="" class="h-5 w-5" />
+              Google
+            </button>
+            <button
+              type="button"
+              class="flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-[#502274]/30 hover:text-[#502274]"
+            >
+              <img src="/assets/github.svg" alt="" class="h-5 w-5" />
+              GitHub
+            </button>
+          </div>
+
+          <p class="mt-8 text-center text-sm text-gray-600">
+            Already have an account?
+            <a href="/sign-in" class="font-semibold text-[#502274] hover:underline"
+              >Sign in</a
+            >
+          </p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

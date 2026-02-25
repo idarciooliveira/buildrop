@@ -31,7 +31,10 @@ const footerCols: Record<string, string[]> = {
             <ul class="space-y-3 text-sm font-medium text-gray-500">
               {links.map((item) => (
                 <li>
-                  <a class="transition-colors hover:text-[#502274]" href="#">
+                  <a
+                    class="transition-colors hover:text-[#502274]"
+                    href={item === "Pricing" ? "/#pricing" : item === "Features" ? "#features" : "#"}
+                  >
                     {item}
                   </a>
                 </li>
