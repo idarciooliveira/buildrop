@@ -1,13 +1,79 @@
-# Astro with Tailwind
+# BuildDrop
 
-```sh
-bun create astro@latest -- --template with-tailwindcss
+Landing page and product UI prototype for **BuildDrop**, an app-distribution experience focused on sharing iOS/Android builds with teams and testers.
+
+![BuildDrop preview](docs/screenshot.png)
+
+## Tech stack
+
+- [Astro 5](https://astro.build/)
+- [Tailwind CSS v4](https://tailwindcss.com/) via `@tailwindcss/vite`
+- [TypeScript](https://www.typescriptlang.org/)
+- [Starwind UI primitives](https://starwind.dev/) (e.g. button component)
+- Bun as the package manager/runtime
+
+## Getting started
+
+### 1) Install dependencies
+
+```bash
+bun install
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/with-tailwindcss)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/with-tailwindcss)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/with-tailwindcss/devcontainer.json)
+### 2) Run locally
 
-Astro comes with [Tailwind](https://tailwindcss.com) support out of the box. This example showcases how to style your Astro project with Tailwind.
+```bash
+bun run dev
+```
 
-For complete setup instructions, please see our [Tailwind Styling Guide](https://docs.astro.build/en/guides/styling/#tailwind).
+Astro dev server will run on `http://localhost:4321` by default.
+
+## Available scripts
+
+- `bun run dev` — start local development server
+- `bun run build` — create production build in `dist/`
+- `bun run preview` — preview production output locally
+- `bun run astro -- check src/pages/index.astro` — run Astro checks (you can change the target file)
+
+## Current routes
+
+- `/` → marketing landing page (`src/pages/index.astro`)
+- `/dashboard` → dashboard interface mock (`src/pages/dashboard.astro`)
+- `/sign-in` → sign-in screen (`src/pages/sign-in.astro`)
+- `/sign-up` → sign-up screen (`src/pages/sign-up.astro`)
+
+## Project structure
+
+```text
+src/
+	components/
+		home/                  # Landing page sections (hero, pricing, faq, cta, footer...)
+		starwind/button/       # Reusable Starwind button component
+	layouts/
+		LandingPageLayout.astro
+		main.astro
+	pages/
+		index.astro
+		dashboard.astro
+		sign-in.astro
+		sign-up.astro
+	styles/
+		global.css             # Tailwind import + brand theme tokens
+		starwind.css
+docs/
+	color-design.md
+	screenshot.png
+```
+
+## Styling and design notes
+
+- Brand colors are defined in `src/styles/global.css` using Tailwind v4 theme tokens:
+  - `--color-brand-primary`
+  - `--color-brand-secondary`
+  - `--color-brand-complement`
+- Home sections are composed from `src/components/home/*` and rendered through `LandingPageLayout.astro`.
+
+## Notes
+
+- This repository currently focuses on frontend screens and interaction patterns.
+- Authentication, uploads, analytics, and billing actions shown in the UI are currently static mock behavior.
