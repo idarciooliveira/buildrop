@@ -1,4 +1,6 @@
 ---
+import { Download } from 'lucide-astro';
+
 interface Props {
 	id?: string;
 	action?: string;
@@ -39,11 +41,7 @@ const {
 			data-invalid-file-message={invalidFileMessage}
 		>
 			<div class="flex flex-col items-center">
-				<svg viewBox="0 0 24 24" class="h-12 w-12 text-slate-800" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-					<path d="M12 4v11" />
-					<path d="m7 10 5 5 5-5" />
-					<path d="M5 20h14" />
-				</svg>
+				<Download class="h-12 w-12 text-slate-800" aria-hidden="true" stroke-width={1.6} />
 				<p class="mt-3 text-lg text-slate-600">
 					{emptyLabel}
 				</p>
