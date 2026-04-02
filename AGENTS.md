@@ -2,190 +2,231 @@
 
 ## Project Overview
 
-Buildrop is an **Astro 6.x** static site project. It uses **Bun** as the package manager
-and **strict TypeScript**. The project is an ES module (`"type": "module"` in package.json).
+Buildrop is an **Astro 6.x** app using **Bun**, **strict TypeScript**, **Tailwind CSS 4**,
+**lucide-astro** for icons, and **Dropzone** for frontend-only drag-and-drop file selection.
+The project is an ES module (`"type": "module"`).
 
 Requires **Node >= 22.12.0**.
 
+## Agent Rules Sources
+
+- No `.cursorrules` file exists
+- No `.cursor/rules/` directory exists
+- No `.github/copilot-instructions.md` file exists
+- This `AGENTS.md` is the project-specific instruction source for coding agents
+
 ## Project Structure
 
-```
+```text
 src/
-├── assets/         # Static assets (SVGs, images) — imported via Astro's asset pipeline
-├── components/     # Reusable .astro components
-├── layouts/        # Page layout wrappers (provide <html>, <head>, <body>, <slot />)
-├── pages/          # File-based routing — each .astro file becomes a route
-public/             # Static files served as-is (favicon, robots.txt, etc.)
-astro.config.mjs    # Astro configuration
-tsconfig.json       # TypeScript config (extends astro/tsconfigs/strict)
+├── components/          # Reusable Astro UI components
+│   ├── BuildropDropzone.astro
+│   └── NavBar.astro
+├── layouts/             # Shared layout wrappers
+├── pages/               # File-based routes
+├── styles/              # Global CSS entrypoints
+└── types/               # Local type declarations (e.g. dropzone.d.ts)
+public/                  # Static files served as-is
+astro.config.mjs         # Astro config with Tailwind Vite plugin
+tsconfig.json            # Strict Astro TS config
 ```
 
 ## Commands
 
 ### Package Manager
 
-Always use **bun** — never npm, yarn, or pnpm. A `bun.lock` lockfile is present.
+Always use **bun**. Do not use npm, yarn, or pnpm.
 
 ```bash
-bun install          # Install dependencies
+bun install
 ```
 
 ### Development
 
 ```bash
-bun dev              # Start dev server (default: http://localhost:4321)
-bun run build        # Production build (output: ./dist/)
-bun run preview      # Preview production build locally
+bun dev
+bun run build
+bun run preview
 ```
 
 ### Type Checking
 
 ```bash
-bunx astro check     # Run Astro's built-in type checker (uses TypeScript strict mode)
+bunx astro check
 ```
 
-### Linting & Formatting
+### Linting / Formatting
 
-No ESLint or Prettier is currently configured. If adding them:
-- Use `bunx` to run CLI tools
-- Prefer flat ESLint config (`eslint.config.mjs`) with `eslint-plugin-astro`
+No ESLint or Prettier config is currently present.
+
+If you add linting or formatting:
+- Prefer `eslint.config.mjs` over legacy `.eslintrc`
+- Use `eslint-plugin-astro`
+- Run tools with `bunx`
 
 ### Testing
 
-No test framework is currently configured. If adding one:
-- Prefer **Vitest** for unit/integration tests (`bunx vitest` / `bunx vitest run`)
-- Run a single test file: `bunx vitest run path/to/file.test.ts`
-- Run tests matching a pattern: `bunx vitest run -t "test name pattern"`
+No test runner is configured yet.
+
+If adding tests, prefer **Vitest**:
+
+```bash
+bunx vitest
+bunx vitest run
+bunx vitest run path/to/file.test.ts
+bunx vitest run -t "test name"
+```
+
+## Current Stack
+
+- **Astro 6** for pages, layouts, and component composition
+- **Tailwind CSS 4** via `@tailwindcss/vite`
+- **lucide-astro** for icons instead of inline SVG where practical
+- **dropzone** for client-side drag-and-drop upload UI
+- **@astrojs/check** and `typescript` for strict checking
+
+## Configuration Notes
+
+- `astro.config.mjs` uses `tailwindcss()` in `vite.plugins`
+- Global CSS is imported from `src/layouts/Layout.astro`
+- `src/styles/global.css` imports both `tailwindcss` and `dropzone/dist/dropzone.css`
+- `src/types/dropzone.d.ts` contains local typings for the Dropzone package
 
 ## Code Style Guidelines
 
-### Astro Component Structure
+### Astro Components
 
-Astro components use a frontmatter fence (`---`) for server-side logic, followed by
-the template, then an optional `<style>` block:
+Preferred structure:
+
+1. Frontmatter imports and prop typing
+2. `Astro.props` destructuring/defaults
+3. Template markup
+4. Optional `<script>`
+5. Optional `<style>`
+
+Example:
 
 ```astro
 ---
-// 1. Imports
 import Component from '../components/Component.astro';
-import asset from '../assets/image.svg';
 
-// 2. Props interface (if component accepts props)
 interface Props {
-  title: string;
+	title?: string;
 }
 
-// 3. Logic / data fetching
-const { title } = Astro.props;
+const { title = 'Buildrop' } = Astro.props;
 ---
 
-<!-- 4. Template markup -->
-<div>
-  <Component />
-</div>
-
-<!-- 5. Scoped styles -->
-<style>
-  div { color: red; }
-</style>
+<Component title={title} />
 ```
 
 ### Imports
 
-- Use **ES module imports** (`import`/`export`) — never CommonJS (`require`/`module.exports`)
-- Import Astro components with relative paths: `'../components/Foo.astro'`
-- Import assets through `src/assets/` (enables Astro's optimization pipeline):
-  ```ts
-  import logo from '../assets/logo.svg';
-  // Use: logo.src for the URL
-  ```
-- Static files in `public/` are referenced by absolute URL path: `"/favicon.svg"`
-- Order imports: external packages first, then local components, then assets
+- Use ESM imports only
+- Order imports: external packages first, then local components/types/styles
+- Use relative paths for local Astro files
+- Prefer `lucide-astro` icons over hand-written inline SVG when an equivalent exists
+- Import global CSS from layouts, not ad hoc per page unless there is a clear reason
 
 ### TypeScript
 
-- The project extends `astro/tsconfigs/strict` — strict mode is enforced
-- Use `interface` for component props (Astro convention)
-- Use explicit types; avoid `any`
-- Config files (`.mjs`) should include `// @ts-check` at the top for type checking
-- Astro-generated types are at `.astro/types.d.ts` — do not edit this file
+- Strict typing is enabled; do not use `any`
+- Use `interface` for component props
+- Add local `.d.ts` files when third-party packages do not ship usable types
+- Type inline script parameters explicitly when Astro check requires it
+- Keep helper types close to the component unless they are reused broadly
 
-### HTML / Templates
+### HTML / Markup
 
-- Use **tabs for indentation** in `.astro` files (Astro default convention)
-- Use semantic HTML elements (`<main>`, `<section>`, `<nav>`, `<article>`, etc.)
-- Always include `alt` attributes on images (use `alt=""` for decorative images)
-- Set `lang="en"` on the `<html>` element in layouts
-- Include proper `<meta>` viewport and charset tags in layouts
+- Use semantic elements: `header`, `main`, `section`, `nav`, etc.
+- Keep page-level structure in pages and reusable UI in `src/components/`
+- Put repeated UI blocks into dedicated components instead of duplicating markup
+- Preserve accessibility basics: meaningful button text, `aria-hidden` for decorative icons
 
-### CSS / Styling
+### Styling
 
-- Use **scoped `<style>` blocks** in Astro components (styles are scoped by default)
-- No CSS framework is currently configured — use plain CSS
-- Use CSS custom properties (`--var-name`) for design tokens when establishing a system
-- Prefer `rem`/`em` for font sizes; `px` is acceptable for borders, padding, and small values
-- Use media queries for responsive design; mobile breakpoint at `768px`
-- Multiline `box-shadow` and `background` values: put each layer on its own line
+- Prefer Tailwind utility classes for layout, spacing, typography, and color
+- Keep component-scoped `<style>` blocks for behavior-specific or third-party state styling
+- Use global CSS only for app-wide imports and truly global rules
+- Reuse existing visual language: rounded panels, blue/cyan gradients, soft slate neutrals
+- Keep above-the-fold landing page sections compact so they fit within the viewport when intended
+
+### Client-Side Behavior
+
+- Keep browser-only integrations self-contained inside the component that owns the UI
+- For Dropzone, prefer reusable component boundaries like `BuildropDropzone.astro`
+- Avoid page-level selectors for component internals
+- Expose reuse through props and custom DOM events instead of hardcoding page-specific behavior
+- Current Dropzone usage is **frontend-only**; do not assume a working upload backend exists
 
 ### Naming Conventions
 
-- **Components**: PascalCase filenames — `Welcome.astro`, `Layout.astro`
-- **Pages**: lowercase filenames — `index.astro`, `about.astro` (determines URL slugs)
-- **Assets**: lowercase with hyphens — `astro-logo.svg`, `background.svg`
-- **CSS classes**: lowercase with hyphens — `class="my-component"`
-- **CSS IDs**: camelCase or lowercase — `id="hero"`, `id="container"`
-- **TypeScript**: camelCase for variables/functions, PascalCase for types/interfaces
+- Components: PascalCase filenames, e.g. `NavBar.astro`, `BuildropDropzone.astro`
+- Pages: lowercase route filenames, e.g. `index.astro`
+- TS variables/functions: camelCase
+- TS types/interfaces: PascalCase
+- CSS utility class ordering should stay readable and grouped by purpose
 
-### File Organization
+## Reuse Patterns
 
-- One component per file
-- Layouts go in `src/layouts/` — they must include `<slot />` for child content
-- Pages go in `src/pages/` — Astro uses file-based routing
-- Shared/reusable components go in `src/components/`
-- Static assets that need processing go in `src/assets/`
-- Static assets served as-is go in `public/`
+### Shared Components
 
-### Configuration Files
+- `NavBar.astro` owns the top navigation/header
+- `BuildropDropzone.astro` owns the upload panel, Dropzone initialization, status text, and submit button
 
-- `astro.config.mjs` — Astro configuration using `defineConfig()` from `'astro/config'`
-- `tsconfig.json` — extends `astro/tsconfigs/strict`, includes `.astro/types.d.ts`
+### BuildropDropzone API
 
-### Error Handling
+Current reusable props:
 
-- Use Astro's built-in 404 page by creating `src/pages/404.astro`
-- For data fetching in frontmatter, use try/catch blocks
-- Validate props with TypeScript interfaces — strict mode catches type mismatches
+- `id`
+- `action`
+- `acceptedFiles`
+- `buttonLabel`
+- `emptyLabel`
+- `readyMessage`
+- `invalidFileMessage`
+- `containerClass`
+- `dropzoneClass`
 
-### Git & Environment
+Current custom DOM events:
 
-- Never commit `.env` or `.env.production` files (listed in .gitignore)
-- Build output (`dist/`) and generated types (`.astro/`) are gitignored
-- Do not commit `node_modules/`
+- `buildrop:file-added`
+- `buildrop:cleared`
+- `buildrop:error`
+- `buildrop:submit`
 
-## Astro-Specific Patterns
+When extending this component, preserve its frontend-only default behavior unless requirements change.
 
-### Dynamic Expressions in Templates
+## Error Handling
 
-```astro
-<img src={asset.src} alt="description" />
-<meta name="generator" content={Astro.generator} />
-```
+- Validate component props with TypeScript instead of runtime-heavy guards when possible
+- For client UI, prefer clear user-facing status text over silent failure
+- If a third-party library lacks types, add or update local declarations in `src/types/`
 
-### Slots (Content Projection)
+## Git / Generated Files
 
-Layouts use `<slot />` to render child content:
-```astro
-<body>
-  <slot />
-</body>
-```
+- Never commit `.env` or `.env.production`
+- Do not commit `dist/`, `.astro/`, or `node_modules/`
+- `bun.lock` should be updated when dependencies change
 
-### Adding Integrations
+## Practical Guidance For Agents
 
-When adding framework support (React, Tailwind, etc.):
+- Read the existing component boundary before refactoring
+- Prefer small, reusable Astro components over large page files
+- Keep homepage-specific copy in the page, not in shared components, unless it is a prop default
+- When adding icons, use `lucide-astro` first
+- When changing upload behavior, update both `BuildropDropzone.astro` and `src/types/dropzone.d.ts` if needed
+- After meaningful changes, run:
+
 ```bash
-bunx astro add react      # Adds React integration
-bunx astro add tailwind   # Adds Tailwind CSS
+bun run build
+bunx astro check
 ```
 
-This auto-updates `astro.config.mjs` and installs dependencies.
+<!-- convex-ai-start -->
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read `convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
+<!-- convex-ai-end -->
