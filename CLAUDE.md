@@ -4,8 +4,8 @@
 
 Buildrop is an **Astro 6.x** app using **Bun**, **strict TypeScript**, **Tailwind CSS 4**,
 **lucide-astro** for icons, **Dropzone** for frontend-only drag-and-drop file selection,
-**Convex** as its backend, and a lightweight **Tailwind v4 design system** defined in
-`src/styles/global.css`.
+**Convex** as its backend, **Better Auth** for authentication integration, and a
+lightweight **Tailwind v4 design system** defined in `src/styles/global.css`.
 
 Requires **Node >= 22.12.0**.
 
@@ -17,6 +17,7 @@ Requires **Node >= 22.12.0**.
 - lucide-astro
 - dropzone
 - Convex
+- Better Auth via `@convex-dev/better-auth` and `better-auth`
 - @astrojs/check
 - TypeScript strict mode
 
@@ -49,17 +50,23 @@ src/
 ├── components/
 │   ├── BuildropDropzone.astro
 │   └── NavBar.astro
+├── lib/
 ├── layouts/
 ├── pages/
 ├── styles/
 │   └── global.css
 └── types/
 convex/
+├── auth.config.ts
+├── auth.ts
+├── convex.config.ts
+├── http.ts
 ├── _generated/
 └── tsconfig.json
 public/
 astro.config.mjs
 tsconfig.json
+.env.example
 ```
 
 ## Code Conventions
@@ -126,6 +133,16 @@ Current `ds-*` utilities:
 - Prefer props and custom events over page-specific hardcoding for reusable components
 - Current upload behavior is frontend-only; do not assume backend upload handling exists yet
 
+### Auth
+
+- Better Auth is partially integrated already
+- Backend auth setup lives in `convex/auth.config.ts`, `convex/auth.ts`, `convex/convex.config.ts`, and `convex/http.ts`
+- Frontend auth client lives in `src/lib/auth-client.ts`
+- Better Auth routes are mounted through Convex at `/api/auth`
+- Email/password auth is enabled in config
+- Auth UI, OAuth providers, verification flows, and session-aware app UX are not implemented yet
+- Use `.env.example` as the canonical reference for required environment variables
+
 ## Shared Components
 
 ### `NavBar.astro`
@@ -164,8 +181,7 @@ Current Convex state:
 
 - `convex/` exists
 - `convex/_generated/` exists
-- `.env.local` contains local Convex deployment values
-- `.env.local` is gitignored
+- `.env.example` documents required Convex and Better Auth environment variables
 
 ### Convex Guidance
 
@@ -173,6 +189,15 @@ Current Convex state:
 - Prefer adding real Convex source files like `convex/schema.ts` or `convex/*.ts`
 - `convex dev` may report a typecheck error if `convex/` contains no source files yet
 - If you change Convex functions or schema, regenerate/check against the running Convex dev process
+
+### Better Auth Guidance
+
+- `convex/auth.config.ts` is the Convex JWT provider configuration
+- `convex/auth.ts` is the Better Auth factory and Convex adapter entrypoint
+- `convex/http.ts` is responsible for route registration via `registerRoutesLazy`
+- `src/lib/auth-client.ts` should be reused for frontend auth calls
+- Keep Better Auth HTTP handling mounted through Convex unless requirements explicitly change
+- Do not document env vars from `.env.local`; use `.env.example` instead
 
 Convex agent skills for common tasks can be installed with:
 

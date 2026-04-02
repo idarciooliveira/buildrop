@@ -23,14 +23,23 @@ src/
 ├── components/          # Reusable Astro UI components
 │   ├── BuildropDropzone.astro
 │   └── NavBar.astro
+├── lib/                 # Frontend helpers like auth-client.ts
 ├── layouts/             # Shared layout wrappers
 ├── pages/               # File-based routes
 ├── styles/              # Global CSS, theme tokens, and ds-* utilities
 │   └── global.css
 └── types/               # Local type declarations (e.g. dropzone.d.ts)
+convex/                  # Convex backend source
+├── auth.config.ts       # Convex auth provider config
+├── auth.ts              # Better Auth factory + Convex adapter
+├── convex.config.ts     # Component registration
+├── http.ts              # Better Auth HTTP route registration
+├── _generated/          # Generated Convex API/types
+└── tsconfig.json
 public/                  # Static files served as-is
 astro.config.mjs         # Astro config with Tailwind Vite plugin
 tsconfig.json            # Strict Astro TS config
+.env.example             # Example required environment variables
 ```
 
 ## Commands
@@ -63,6 +72,21 @@ Notes:
 - `bun run dev:full` runs both Astro and Convex watchers together
 - `bun run convex:codegen` requires the Convex backend to already be running
 - `convex dev` may show a TypeScript "No inputs were found" error until real Convex source files like `convex/schema.ts` exist
+
+### Better Auth
+
+Current setup status:
+- `@convex-dev/better-auth` and `better-auth` are installed
+- `convex/auth.config.ts` exposes `getAuthConfigProvider()`
+- `convex/convex.config.ts` registers the Better Auth component
+- `convex/auth.ts` creates `authComponent` and `createAuth()`
+- `convex/http.ts` mounts Better Auth routes at `/api/auth`
+- `src/lib/auth-client.ts` exposes a frontend Better Auth client
+- Email/password auth is enabled in config
+- Sign-in/sign-up UI is not implemented yet
+- OAuth providers, email verification, and password reset flows are not configured yet
+
+Use `.env.example` as the source of truth for required environment variables.
 
 ### Type Checking
 
@@ -100,6 +124,7 @@ bunx vitest run -t "test name"
 - **lucide-astro** for icons instead of inline SVG where practical
 - **dropzone** for client-side drag-and-drop upload UI
 - **Convex** for backend functions and generated API/types
+- **Better Auth** via `@convex-dev/better-auth` and `better-auth`
 - **@astrojs/check** and `typescript` for strict checking
 - **concurrently** for running Astro and Convex dev servers together
 
@@ -110,7 +135,7 @@ bunx vitest run -t "test name"
 - `src/styles/global.css` imports both `tailwindcss` and `dropzone/dist/dropzone.css`
 - `src/styles/global.css` is the design-system source for `@theme` tokens, base styles, and `@utility ds-*` classes
 - `src/types/dropzone.d.ts` contains local typings for the Dropzone package
-- `.env.local` is used for local Convex deployment values and is gitignored
+- `.env.example` is the canonical reference for required environment variables
 - `convex/tsconfig.json` is owned by Convex and typechecks Convex source files
 
 ## Design System
@@ -233,12 +258,35 @@ const { title = 'Buildrop' } = Astro.props;
 - `NavBar.astro` owns the top navigation/header
 - `BuildropDropzone.astro` owns the upload panel, Dropzone initialization, status text, and submit button
 
+### Auth Helpers
+
+- `src/lib/auth-client.ts` owns the frontend Better Auth client configuration
+- Keep auth UI separate from the Convex backend setup in `convex/`
+- Reuse the existing auth client instead of creating ad hoc Better Auth clients in pages or components
+
 ### Design System Usage
 
 - `Layout.astro` is responsible for loading `src/styles/global.css`
 - `index.astro` composes the page using `ds-page`, `ds-hero`, `ds-title`, `ds-subtitle`, `ds-icon-tile`, `ds-step-label`, and `ds-step-copy`
 - `NavBar.astro` uses token-backed color values plus `ds-icon-tile`, `ds-nav-link`, and `ds-nav-link-active`
 - `BuildropDropzone.astro` uses `ds-surface`, `ds-dropzone`, and `ds-button-primary`, with component-scoped CSS reserved for Dropzone hover and upload tone states
+
+### Better Auth Integration
+
+Current backend files:
+- `convex/auth.config.ts`
+- `convex/convex.config.ts`
+- `convex/auth.ts`
+- `convex/http.ts`
+
+Current frontend auth file:
+- `src/lib/auth-client.ts`
+
+Current behavior:
+- Better Auth routes are registered through Convex at `/api/auth`
+- Better Auth uses the Convex adapter from `authComponent.adapter(ctx)`
+- The client uses `createAuthClient()` plus `convexClient()`
+- Auth UI and session-aware app behavior still need to be built
 
 ### BuildropDropzone API
 
@@ -269,6 +317,7 @@ When extending this component, preserve its frontend-only default behavior unles
 - For client UI, prefer clear user-facing status text over silent failure
 - If a third-party library lacks types, add or update local declarations in `src/types/`
 - If Convex typecheck reports no inputs, add real source files under `convex/` before treating it as a backend bug
+- Better Auth methods that rely on cookies/session state should be invoked via the client or through component helpers; do not assume Convex functions can set browser cookies directly
 
 ## Git / Generated Files
 
@@ -288,6 +337,8 @@ When extending this component, preserve its frontend-only default behavior unles
 - Prefer extending the current token and `ds-*` utility system over inventing a parallel design abstraction
 - When changing upload behavior, update both `BuildropDropzone.astro` and `src/types/dropzone.d.ts` if needed
 - When working on Convex code, always read `convex/_generated/ai/guidelines.md` first
+- When working on auth, read `.env.example` for expected variables and `convex/auth.ts` plus `convex/http.ts` for the current integration shape
+- Keep Better Auth backend configuration inside `convex/`; do not move it into Astro routes unless requirements explicitly change
 - Treat `convex/` as the source of backend logic and `convex/_generated/` as generated output
 - After meaningful changes, run:
 
