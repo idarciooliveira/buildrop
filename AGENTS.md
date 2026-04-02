@@ -45,9 +45,22 @@ bun install
 
 ```bash
 bun dev
+bun run dev:full
 bun run build
 bun run preview
 ```
+
+### Convex
+
+```bash
+bun run convex:dev
+bun run convex:codegen
+```
+
+Notes:
+- `bun run dev:full` runs both Astro and Convex watchers together
+- `bun run convex:codegen` requires the Convex backend to already be running
+- `convex dev` may show a TypeScript "No inputs were found" error until real Convex source files like `convex/schema.ts` exist
 
 ### Type Checking
 
@@ -83,7 +96,9 @@ bunx vitest run -t "test name"
 - **Tailwind CSS 4** via `@tailwindcss/vite`
 - **lucide-astro** for icons instead of inline SVG where practical
 - **dropzone** for client-side drag-and-drop upload UI
+- **Convex** for backend functions and generated API/types
 - **@astrojs/check** and `typescript` for strict checking
+- **concurrently** for running Astro and Convex dev servers together
 
 ## Configuration Notes
 
@@ -91,6 +106,8 @@ bunx vitest run -t "test name"
 - Global CSS is imported from `src/layouts/Layout.astro`
 - `src/styles/global.css` imports both `tailwindcss` and `dropzone/dist/dropzone.css`
 - `src/types/dropzone.d.ts` contains local typings for the Dropzone package
+- `.env.local` is used for local Convex deployment values and is gitignored
+- `convex/tsconfig.json` is owned by Convex and typechecks Convex source files
 
 ## Code Style Guidelines
 
@@ -202,12 +219,15 @@ When extending this component, preserve its frontend-only default behavior unles
 - Validate component props with TypeScript instead of runtime-heavy guards when possible
 - For client UI, prefer clear user-facing status text over silent failure
 - If a third-party library lacks types, add or update local declarations in `src/types/`
+- If Convex typecheck reports no inputs, add real source files under `convex/` before treating it as a backend bug
 
 ## Git / Generated Files
 
 - Never commit `.env` or `.env.production`
+- Never commit `.env.local`
 - Do not commit `dist/`, `.astro/`, or `node_modules/`
 - `bun.lock` should be updated when dependencies change
+- Do not hand-edit files in `convex/_generated/`
 
 ## Practical Guidance For Agents
 
@@ -216,6 +236,8 @@ When extending this component, preserve its frontend-only default behavior unles
 - Keep homepage-specific copy in the page, not in shared components, unless it is a prop default
 - When adding icons, use `lucide-astro` first
 - When changing upload behavior, update both `BuildropDropzone.astro` and `src/types/dropzone.d.ts` if needed
+- When working on Convex code, always read `convex/_generated/ai/guidelines.md` first
+- Treat `convex/` as the source of backend logic and `convex/_generated/` as generated output
 - After meaningful changes, run:
 
 ```bash
