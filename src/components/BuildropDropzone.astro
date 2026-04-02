@@ -1,214 +1,235 @@
 ---
-import { Download } from 'lucide-astro';
+import { Download } from "lucide-astro";
 
 interface Props {
-	id?: string;
-	action?: string;
-	acceptedFiles?: string;
-	buttonLabel?: string;
-	emptyLabel?: string;
-	readyMessage?: string;
-	invalidFileMessage?: string;
-	containerClass?: string;
-	dropzoneClass?: string;
+  id?: string;
+  action?: string;
+  acceptedFiles?: string;
+  buttonLabel?: string;
+  emptyLabel?: string;
+  readyMessage?: string;
+  invalidFileMessage?: string;
+  containerClass?: string;
+  dropzoneClass?: string;
 }
 
 const {
-	id = 'buildrop-dropzone',
-	action = '/api/uploads',
-	acceptedFiles = '.ipa,.apk,.aab',
-	buttonLabel = 'Submit',
-	emptyLabel = 'Choose a file or drag it here.',
-	readyMessage = 'Ready to submit.',
-	invalidFileMessage = 'Buildrop accepts IPA, APK, and AAB files only.',
-	containerClass = '',
-	dropzoneClass = ''
+  id = "buildrop-dropzone",
+  action = "/api/uploads",
+  acceptedFiles = ".ipa,.apk,.aab",
+  buttonLabel = "Submit",
+  emptyLabel = "Choose a file or drag it here.",
+  readyMessage = "Ready to submit.",
+  invalidFileMessage = "Buildrop accepts IPA, APK, and AAB files only.",
+  containerClass = "",
+  dropzoneClass = "",
 } = Astro.props;
 ---
 
-<div class:list={['flex min-h-0 flex-1 flex-col', containerClass]} data-buildrop-dropzone-root>
-	<div class="mx-auto flex w-full max-w-4xl min-h-0 flex-1 flex-col rounded-2xl bg-slate-100 p-3 ring-1 ring-slate-200">
-		<form
-			id={id}
-			class:list={[
-				'dropzone relative flex min-h-0 flex-1 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 text-center transition duration-200',
-				dropzoneClass
-			]}
-			action={action}
-			data-dropzone-id={id}
-			data-accepted-files={acceptedFiles}
-			data-ready-message={readyMessage}
-			data-invalid-file-message={invalidFileMessage}
-		>
-			<div class="flex flex-col items-center">
-				<Download class="h-12 w-12 text-slate-800" aria-hidden="true" stroke-width={1.6} />
-				<p class="mt-3 text-lg text-slate-600">
-					{emptyLabel}
-				</p>
-			</div>
-			<div class="absolute inset-x-0 bottom-3 text-center">
-				<p class="text-sm font-medium text-sky-700" data-file-name></p>
-				<p class="mt-0.5 text-xs text-slate-400" data-upload-status></p>
-			</div>
-		</form>
-	</div>
+<div
+  class:list={["flex min-h-0 flex-1 flex-col", containerClass]}
+  data-buildrop-dropzone-root
+>
+  <div
+    class="ds-surface mx-auto flex w-full max-w-4xl min-h-0 flex-1 flex-col p-3"
+  >
+    <form
+      id={id}
+      class:list={[
+        "ds-dropzone dropzone relative flex min-h-0 flex-1 items-center justify-center px-6 text-center transition duration-200",
+        dropzoneClass,
+      ]}
+      action={action}
+      data-dropzone-id={id}
+      data-accepted-files={acceptedFiles}
+      data-ready-message={readyMessage}
+      data-invalid-file-message={invalidFileMessage}
+    >
+      <div class="flex flex-col items-center">
+        <Download
+          class="h-12 w-12 text-text-strong"
+          aria-hidden="true"
+          stroke-width={1.6}
+        />
+        <p class="mt-3 text-lg text-(--color-text-soft)">
+          {emptyLabel}
+        </p>
+      </div>
+      <div class="absolute inset-x-0 bottom-3 text-center">
+        <p class="text-sm font-medium text-state-success" data-file-name></p>
+        <p class="mt-0.5 text-xs text-(--color-text-muted)" data-upload-status>
+        </p>
+      </div>
+    </form>
+  </div>
 
-	<div class="mt-4 flex flex-col items-center">
-		<button
-			type="button"
-			class="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-sky-500 to-cyan-400 px-10 py-3 text-base font-semibold text-white shadow-lg shadow-cyan-500/30 transition hover:shadow-cyan-500/40 disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 disabled:shadow-none"
-			data-submit
-			disabled
-		>
-			{buttonLabel}
-		</button>
-	</div>
+  <div class="mt-4 flex flex-col items-center">
+    <button
+      type="button"
+      class="ds-button-primary inline-flex items-center justify-center px-10 py-3 text-base font-semibold transition hover:brightness-[1.03] disabled:cursor-not-allowed disabled:bg-none disabled:shadow-none disabled:[background:var(--color-surface-panel-strong)] disabled:[color:var(--color-text-soft)]"
+      data-submit
+      disabled
+    >
+      {buttonLabel}
+    </button>
+  </div>
 </div>
 
 <script>
-	import { Dropzone } from 'dropzone';
+  import { Dropzone } from "dropzone";
 
-	type UploadTone = 'neutral' | 'success' | 'error';
+  type UploadTone = "neutral" | "success" | "error";
 
-	interface QueuedFile {
-		name: string;
-		size: number;
-	}
+  interface QueuedFile {
+    name: string;
+    size: number;
+  }
 
-	const roots = document.querySelectorAll('[data-buildrop-dropzone-root]');
+  const roots = document.querySelectorAll("[data-buildrop-dropzone-root]");
 
-	const formatBytes = (bytes: number) => {
-		if (!Number.isFinite(bytes) || bytes <= 0) {
-			return '0 B';
-		}
+  const formatBytes = (bytes: number) => {
+    if (!Number.isFinite(bytes) || bytes <= 0) {
+      return "0 B";
+    }
 
-		const units = ['B', 'KB', 'MB', 'GB'];
-		const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-		const value = bytes / 1024 ** exponent;
+    const units = ["B", "KB", "MB", "GB"];
+    const exponent = Math.min(
+      Math.floor(Math.log(bytes) / Math.log(1024)),
+      units.length - 1,
+    );
+    const value = bytes / 1024 ** exponent;
 
-		return `${value.toFixed(value >= 10 || exponent === 0 ? 0 : 1)} ${units[exponent]}`;
-	};
+    return `${value.toFixed(value >= 10 || exponent === 0 ? 0 : 1)} ${units[exponent]}`;
+  };
 
-	for (const root of roots) {
-		if (!(root instanceof HTMLElement)) {
-			continue;
-		}
+  for (const root of roots) {
+    if (!(root instanceof HTMLElement)) {
+      continue;
+    }
 
-		const form = root.querySelector('form[data-dropzone-id]');
-		const submitButton = root.querySelector('[data-submit]');
-		const fileName = root.querySelector('[data-file-name]');
-		const status = root.querySelector('[data-upload-status]');
+    const form = root.querySelector("form[data-dropzone-id]");
+    const submitButton = root.querySelector("[data-submit]");
+    const fileName = root.querySelector("[data-file-name]");
+    const status = root.querySelector("[data-upload-status]");
 
-		const setStatus = (message: string, tone: UploadTone = 'neutral') => {
-			if (!(status instanceof HTMLElement)) {
-				return;
-			}
+    const setStatus = (message: string, tone: UploadTone = "neutral") => {
+      if (!(status instanceof HTMLElement)) {
+        return;
+      }
 
-			status.textContent = message;
-			status.dataset.tone = tone;
-		};
+      status.textContent = message;
+      status.dataset.tone = tone;
+    };
 
-		if (
-			!(form instanceof HTMLFormElement) ||
-			!(submitButton instanceof HTMLButtonElement) ||
-			!(fileName instanceof HTMLElement) ||
-			form.dataset.dropzoneReady === 'true'
-		) {
-			continue;
-		}
+    if (
+      !(form instanceof HTMLFormElement) ||
+      !(submitButton instanceof HTMLButtonElement) ||
+      !(fileName instanceof HTMLElement) ||
+      form.dataset.dropzoneReady === "true"
+    ) {
+      continue;
+    }
 
-		form.dataset.dropzoneReady = 'true';
+    form.dataset.dropzoneReady = "true";
 
-		const readyMessage = form.dataset.readyMessage ?? 'Ready to submit.';
-		const invalidFileMessage =
-			form.dataset.invalidFileMessage ?? 'Buildrop accepts IPA, APK, and AAB files only.';
+    const readyMessage = form.dataset.readyMessage ?? "Ready to submit.";
+    const invalidFileMessage =
+      form.dataset.invalidFileMessage ??
+      "Buildrop accepts IPA, APK, and AAB files only.";
 
-		const dropzone = new Dropzone(form, {
-			url: form.action,
-			autoProcessQueue: false,
-			clickable: true,
-			maxFiles: 1,
-			parallelUploads: 1,
-			acceptedFiles: form.dataset.acceptedFiles,
-			createImageThumbnails: false,
-			previewsContainer: false,
-			addRemoveLinks: false,
-			dictInvalidFileType: invalidFileMessage,
-			dictDefaultMessage: ''
-		});
+    const dropzone = new Dropzone(form, {
+      url: form.action,
+      autoProcessQueue: false,
+      clickable: true,
+      maxFiles: 1,
+      parallelUploads: 1,
+      acceptedFiles: form.dataset.acceptedFiles,
+      createImageThumbnails: false,
+      previewsContainer: false,
+      addRemoveLinks: false,
+      dictInvalidFileType: invalidFileMessage,
+      dictDefaultMessage: "",
+    });
 
-		dropzone.on('addedfile', (file: QueuedFile) => {
-			fileName.textContent = `${file.name} • ${formatBytes(file.size)}`;
-			submitButton.disabled = false;
-			setStatus(readyMessage, 'success');
-			root.dispatchEvent(
-				new CustomEvent('buildrop:file-added', {
-					bubbles: true,
-					detail: { fileName: file.name, size: file.size }
-				})
-			);
-		});
+    dropzone.on("addedfile", (file: QueuedFile) => {
+      fileName.textContent = `${file.name} • ${formatBytes(file.size)}`;
+      submitButton.disabled = false;
+      setStatus(readyMessage, "success");
+      root.dispatchEvent(
+        new CustomEvent("buildrop:file-added", {
+          bubbles: true,
+          detail: { fileName: file.name, size: file.size },
+        }),
+      );
+    });
 
-		dropzone.on('maxfilesexceeded', (file: File) => {
-			dropzone.removeAllFiles(true);
-			dropzone.addFile(file);
-		});
+    dropzone.on("maxfilesexceeded", (file: File) => {
+      dropzone.removeAllFiles(true);
+      dropzone.addFile(file);
+    });
 
-		dropzone.on('removedfile', () => {
-			if (dropzone.files.length > 0) {
-				return;
-			}
+    dropzone.on("removedfile", () => {
+      if (dropzone.files.length > 0) {
+        return;
+      }
 
-			fileName.textContent = '';
-			submitButton.disabled = true;
-			setStatus('', 'neutral');
-			root.dispatchEvent(new CustomEvent('buildrop:cleared', { bubbles: true }));
-		});
+      fileName.textContent = "";
+      submitButton.disabled = true;
+      setStatus("", "neutral");
+      root.dispatchEvent(
+        new CustomEvent("buildrop:cleared", { bubbles: true }),
+      );
+    });
 
-		dropzone.on('error', (_file: File, message: string | Error) => {
-			submitButton.disabled = dropzone.getAcceptedFiles().length === 0;
-			const resolvedMessage =
-				typeof message === 'string' ? message : 'The selected file could not be queued.';
-			setStatus(resolvedMessage, 'error');
-			root.dispatchEvent(
-				new CustomEvent('buildrop:error', {
-					bubbles: true,
-					detail: { message: resolvedMessage }
-				})
-			);
-		});
+    dropzone.on("error", (_file: File, message: string | Error) => {
+      submitButton.disabled = dropzone.getAcceptedFiles().length === 0;
+      const resolvedMessage =
+        typeof message === "string"
+          ? message
+          : "The selected file could not be queued.";
+      setStatus(resolvedMessage, "error");
+      root.dispatchEvent(
+        new CustomEvent("buildrop:error", {
+          bubbles: true,
+          detail: { message: resolvedMessage },
+        }),
+      );
+    });
 
-		submitButton.addEventListener('click', () => {
-			const [selectedFile] = dropzone.getAcceptedFiles();
+    submitButton.addEventListener("click", () => {
+      const [selectedFile] = dropzone.getAcceptedFiles();
 
-			if (!selectedFile) {
-				setStatus('Choose an IPA, APK, or AAB file before submitting.', 'error');
-				return;
-			}
+      if (!selectedFile) {
+        setStatus(
+          "Choose an IPA, APK, or AAB file before submitting.",
+          "error",
+        );
+        return;
+      }
 
-			setStatus(`Submitting ${selectedFile.name}…`, 'success');
-			root.dispatchEvent(
-				new CustomEvent('buildrop:submit', {
-					bubbles: true,
-					detail: { fileName: selectedFile.name, size: selectedFile.size }
-				})
-			);
-		});
-	}
+      setStatus(`Submitting ${selectedFile.name}…`, "success");
+      root.dispatchEvent(
+        new CustomEvent("buildrop:submit", {
+          bubbles: true,
+          detail: { fileName: selectedFile.name, size: selectedFile.size },
+        }),
+      );
+    });
+  }
 </script>
 
 <style>
-	:global(.dropzone.dz-drag-hover) {
-		border-color: rgb(34 211 238);
-		background: rgb(255 255 255 / 0.98);
-		box-shadow: 0 20px 50px -30px rgb(34 211 238 / 0.55);
-	}
+  :global(.dropzone.dz-drag-hover) {
+    border-color: var(--color-brand-400);
+    background: rgb(255 255 255 / 0.98);
+    box-shadow: 0 20px 50px -30px rgb(34 211 238 / 0.55);
+  }
 
-	[data-upload-status][data-tone='success'] {
-		color: rgb(14 116 144);
-	}
+  [data-upload-status][data-tone="success"] {
+    color: var(--color-state-success);
+  }
 
-	[data-upload-status][data-tone='error'] {
-		color: rgb(220 38 38);
-	}
+  [data-upload-status][data-tone="error"] {
+    color: var(--color-state-error);
+  }
 </style>

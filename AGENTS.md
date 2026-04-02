@@ -3,7 +3,8 @@
 ## Project Overview
 
 Buildrop is an **Astro 6.x** app using **Bun**, **strict TypeScript**, **Tailwind CSS 4**,
-**lucide-astro** for icons, and **Dropzone** for frontend-only drag-and-drop file selection.
+**lucide-astro** for icons, **Dropzone** for frontend-only drag-and-drop file selection,
+and a small **Tailwind v4 design system** defined in `src/styles/global.css`.
 The project is an ES module (`"type": "module"`).
 
 Requires **Node >= 22.12.0**.
@@ -24,7 +25,8 @@ src/
 │   └── NavBar.astro
 ├── layouts/             # Shared layout wrappers
 ├── pages/               # File-based routes
-├── styles/              # Global CSS entrypoints
+├── styles/              # Global CSS, theme tokens, and ds-* utilities
+│   └── global.css
 └── types/               # Local type declarations (e.g. dropzone.d.ts)
 public/                  # Static files served as-is
 astro.config.mjs         # Astro config with Tailwind Vite plugin
@@ -94,6 +96,7 @@ bunx vitest run -t "test name"
 
 - **Astro 6** for pages, layouts, and component composition
 - **Tailwind CSS 4** via `@tailwindcss/vite`
+- **Tailwind v4 theme tokens** via `@theme` in `src/styles/global.css`
 - **lucide-astro** for icons instead of inline SVG where practical
 - **dropzone** for client-side drag-and-drop upload UI
 - **Convex** for backend functions and generated API/types
@@ -105,9 +108,45 @@ bunx vitest run -t "test name"
 - `astro.config.mjs` uses `tailwindcss()` in `vite.plugins`
 - Global CSS is imported from `src/layouts/Layout.astro`
 - `src/styles/global.css` imports both `tailwindcss` and `dropzone/dist/dropzone.css`
+- `src/styles/global.css` is the design-system source for `@theme` tokens, base styles, and `@utility ds-*` classes
 - `src/types/dropzone.d.ts` contains local typings for the Dropzone package
 - `.env.local` is used for local Convex deployment values and is gitignored
 - `convex/tsconfig.json` is owned by Convex and typechecks Convex source files
+
+## Design System
+
+The current design system is lightweight and CSS-first. It lives in `src/styles/global.css` and is composed of:
+
+- Tailwind v4 `@theme` tokens for fonts, colors, radii, and shadows
+- `@layer base` rules for app-wide typography, focus states, and element defaults
+- Reusable `@utility ds-*` classes for page, hero, surface, navigation, icon, button, and step UI patterns
+
+Current token groups:
+
+- `--font-sans`
+- `--color-brand-*`
+- `--color-surface-*`
+- `--color-text-*`
+- `--color-border-*`
+- `--color-state-*`
+- `--radius-*`
+- `--shadow-*`
+
+Current `ds-*` utility classes:
+
+- `ds-page`
+- `ds-hero`
+- `ds-title`
+- `ds-subtitle`
+- `ds-surface`
+- `ds-dropzone`
+- `ds-icon-tile`
+- `ds-button-primary`
+- `ds-button-primary-disabled`
+- `ds-nav-link`
+- `ds-nav-link-active`
+- `ds-step-label`
+- `ds-step-copy`
 
 ## Code Style Guidelines
 
@@ -162,11 +201,14 @@ const { title = 'Buildrop' } = Astro.props;
 
 ### Styling
 
-- Prefer Tailwind utility classes for layout, spacing, typography, and color
+- Prefer the existing design-system layer before introducing new one-off styling
+- Use Tailwind utility classes for layout and spacing, and use the shared `ds-*` utilities for repeated visual patterns
+- Reuse `@theme` tokens from `src/styles/global.css` instead of hardcoding hex colors, shadows, or radii when an equivalent token already exists
 - Keep component-scoped `<style>` blocks for behavior-specific or third-party state styling
 - Use global CSS only for app-wide imports and truly global rules
-- Reuse existing visual language: rounded panels, blue/cyan gradients, soft slate neutrals
+- Reuse the current visual language: blue/cyan brand gradients, soft slate surfaces, rounded panels, and pill buttons
 - Keep above-the-fold landing page sections compact so they fit within the viewport when intended
+- If you need a new shared pattern, add or extend a `ds-*` utility in `src/styles/global.css` instead of duplicating long utility strings across components
 
 ### Client-Side Behavior
 
@@ -190,6 +232,13 @@ const { title = 'Buildrop' } = Astro.props;
 
 - `NavBar.astro` owns the top navigation/header
 - `BuildropDropzone.astro` owns the upload panel, Dropzone initialization, status text, and submit button
+
+### Design System Usage
+
+- `Layout.astro` is responsible for loading `src/styles/global.css`
+- `index.astro` composes the page using `ds-page`, `ds-hero`, `ds-title`, `ds-subtitle`, `ds-icon-tile`, `ds-step-label`, and `ds-step-copy`
+- `NavBar.astro` uses token-backed color values plus `ds-icon-tile`, `ds-nav-link`, and `ds-nav-link-active`
+- `BuildropDropzone.astro` uses `ds-surface`, `ds-dropzone`, and `ds-button-primary`, with component-scoped CSS reserved for Dropzone hover and upload tone states
 
 ### BuildropDropzone API
 
@@ -232,9 +281,11 @@ When extending this component, preserve its frontend-only default behavior unles
 ## Practical Guidance For Agents
 
 - Read the existing component boundary before refactoring
+- Read `src/styles/global.css` before changing shared UI patterns or introducing new styling primitives
 - Prefer small, reusable Astro components over large page files
 - Keep homepage-specific copy in the page, not in shared components, unless it is a prop default
 - When adding icons, use `lucide-astro` first
+- Prefer extending the current token and `ds-*` utility system over inventing a parallel design abstraction
 - When changing upload behavior, update both `BuildropDropzone.astro` and `src/types/dropzone.d.ts` if needed
 - When working on Convex code, always read `convex/_generated/ai/guidelines.md` first
 - Treat `convex/` as the source of backend logic and `convex/_generated/` as generated output

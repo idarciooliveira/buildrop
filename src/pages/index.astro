@@ -6,20 +6,20 @@ import { Download, Plus, Share2, Smartphone } from "lucide-astro";
 ---
 
 <Layout>
-  <main class="flex h-screen flex-col overflow-hidden bg-white text-slate-950">
+  <main class="ds-page flex h-screen flex-col overflow-hidden">
     <NavBar />
 
     <div class="flex min-h-0 flex-1 flex-col">
       <section
-        class="shrink-0 bg-linear-to-b from-slate-50 to-white px-6 pb-5 pt-7 text-center"
+        class="ds-hero shrink-0 px-6 pb-5 pt-7 text-center"
       >
         <h1
-          class="mx-auto max-w-4xl text-2xl font-semibold leading-snug tracking-tight text-sky-900 sm:text-3xl lg:text-4xl"
+          class="ds-title mx-auto max-w-4xl text-2xl leading-snug sm:text-3xl lg:text-4xl"
         >
           Distribute your iOS and Android application and install it over the
           air with Buildrop.
         </h1>
-        <p class="mx-auto mt-2 max-w-2xl text-base italic text-slate-400">
+        <p class="ds-subtitle mx-auto mt-2 max-w-2xl text-base">
           We have made the process easier to send your testing builds.
         </p>
       </section>
@@ -27,62 +27,54 @@ import { Download, Plus, Share2, Smartphone } from "lucide-astro";
       <section class="shrink-0 px-6 pb-4 pt-2">
         <div class="relative mx-auto max-w-4xl">
           <div
-            class="pointer-events-none absolute left-[12.5%] right-[12.5%] top-5 hidden h-px bg-slate-200 sm:block"
+            class="pointer-events-none absolute left-[12.5%] right-[12.5%] top-5 hidden h-px bg-[var(--color-border-soft)] sm:block"
           >
           </div>
           <div class="grid grid-cols-4 gap-2 text-center">
             <div class="relative">
-              <div
-                class="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-400 text-white shadow shadow-cyan-500/25"
-              >
+              <div class="ds-icon-tile mx-auto flex h-10 w-10 items-center justify-center">
                 <Download class="h-5 w-5" aria-hidden="true" stroke-width={2} />
               </div>
-              <p class="mt-2 text-sm font-bold text-slate-800">1. Upload</p>
+              <p class="ds-step-label mt-2 text-sm">1. Upload</p>
               <p
-                class="mt-0.5 hidden text-xs leading-snug text-slate-400 sm:block"
+                class="ds-step-copy mt-0.5 hidden text-xs leading-snug sm:block"
               >
                 Upload your IPA or APK file.
               </p>
             </div>
             <div class="relative">
-              <div
-                class="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-400 text-white shadow shadow-cyan-500/25"
-              >
+              <div class="ds-icon-tile mx-auto flex h-10 w-10 items-center justify-center">
                 <Plus class="h-5 w-5" aria-hidden="true" stroke-width={2} />
               </div>
-              <p class="mt-2 text-sm font-bold text-slate-800">2. Submit</p>
+              <p class="ds-step-label mt-2 text-sm">2. Submit</p>
               <p
-                class="mt-0.5 hidden text-xs leading-snug text-slate-400 sm:block"
+                class="ds-step-copy mt-0.5 hidden text-xs leading-snug sm:block"
               >
                 Get the installation link.
               </p>
             </div>
             <div class="relative">
-              <div
-                class="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-400 text-white shadow shadow-cyan-500/25"
-              >
+              <div class="ds-icon-tile mx-auto flex h-10 w-10 items-center justify-center">
                 <Share2 class="h-5 w-5" aria-hidden="true" stroke-width={2} />
               </div>
-              <p class="mt-2 text-sm font-bold text-slate-800">3. Share</p>
+              <p class="ds-step-label mt-2 text-sm">3. Share</p>
               <p
-                class="mt-0.5 hidden text-xs leading-snug text-slate-400 sm:block"
+                class="ds-step-copy mt-0.5 hidden text-xs leading-snug sm:block"
               >
                 Share the link with testers.
               </p>
             </div>
             <div class="relative">
-              <div
-                class="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-cyan-400 text-white shadow shadow-cyan-500/25"
-              >
+              <div class="ds-icon-tile mx-auto flex h-10 w-10 items-center justify-center">
                 <Smartphone
                   class="h-5 w-5"
                   aria-hidden="true"
                   stroke-width={2}
                 />
               </div>
-              <p class="mt-2 text-sm font-bold text-slate-800">4. Open</p>
+              <p class="ds-step-label mt-2 text-sm">4. Open</p>
               <p
-                class="mt-0.5 hidden text-xs leading-snug text-slate-400 sm:block"
+                class="ds-step-copy mt-0.5 hidden text-xs leading-snug sm:block"
               >
                 Install on iOS or Android.
               </p>

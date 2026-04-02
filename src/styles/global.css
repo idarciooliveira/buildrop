@@ -1,2 +1,142 @@
 @import "tailwindcss";
 @import "dropzone/dist/dropzone.css";
+
+@theme {
+	--font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+	--color-brand-50: #f0fbff;
+	--color-brand-100: #d9f7ff;
+	--color-brand-200: #b5efff;
+	--color-brand-300: #79e3ff;
+	--color-brand-400: #22d3ee;
+	--color-brand-500: #06b6d4;
+	--color-brand-600: #0284c7;
+	--color-brand-700: #0369a1;
+	--color-brand-800: #075985;
+	--color-brand-900: #0c4a6e;
+
+	--color-surface-page: #ffffff;
+	--color-surface-subtle: #f8fafc;
+	--color-surface-panel: #f1f5f9;
+	--color-surface-panel-strong: #e2e8f0;
+
+	--color-text-strong: #0f172a;
+	--color-text-heading: #0b5b8c;
+	--color-text-muted: #94a3b8;
+	--color-text-soft: #64748b;
+
+	--color-border-soft: #e2e8f0;
+	--color-border-strong: #cbd5e1;
+	--color-state-success: #0e7490;
+	--color-state-error: #dc2626;
+
+	--radius-panel: 1rem;
+	--radius-card: 0.75rem;
+	--radius-pill: 9999px;
+
+	--shadow-brand-soft: 0 12px 30px -18px rgb(34 211 238 / 0.45);
+	--shadow-panel: 0 10px 24px -18px rgb(15 23 42 / 0.18);
+	--shadow-button: 0 12px 28px -18px rgb(34 211 238 / 0.45);
+}
+
+@layer base {
+	html {
+		font-family: var(--font-sans);
+	}
+
+	body {
+		background: var(--color-surface-page);
+		color: var(--color-text-strong);
+		font-family: var(--font-sans);
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	a {
+		transition: color 160ms ease, opacity 160ms ease;
+	}
+
+	button,
+	input,
+	textarea,
+	select {
+		font: inherit;
+	}
+
+	button:focus-visible,
+	a:focus-visible,
+	input:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--color-brand-500) 70%, white);
+		outline-offset: 2px;
+	}
+}
+
+@utility ds-page {
+	@apply bg-white text-slate-950;
+}
+
+@utility ds-hero {
+	background: linear-gradient(180deg, var(--color-surface-subtle) 0%, var(--color-surface-page) 100%);
+}
+
+@utility ds-title {
+	color: var(--color-text-heading);
+	font-weight: 600;
+	letter-spacing: -0.04em;
+}
+
+@utility ds-subtitle {
+	color: var(--color-text-muted);
+	font-style: italic;
+	font-weight: 400;
+}
+
+@utility ds-surface {
+	background: var(--color-surface-panel);
+	border: 1px solid var(--color-border-soft);
+	border-radius: var(--radius-panel);
+	box-shadow: var(--shadow-panel);
+	}
+
+@utility ds-dropzone {
+	background: var(--color-surface-subtle);
+	border: 2px dashed var(--color-border-strong);
+	border-radius: var(--radius-card);
+	}
+
+@utility ds-icon-tile {
+	background: linear-gradient(135deg, var(--color-brand-600) 0%, var(--color-brand-400) 100%);
+	border-radius: 0.75rem;
+	box-shadow: var(--shadow-brand-soft);
+	color: white;
+	}
+
+@utility ds-button-primary {
+	background: linear-gradient(90deg, var(--color-brand-500) 0%, var(--color-brand-400) 100%);
+	border-radius: var(--radius-pill);
+	box-shadow: var(--shadow-button);
+	color: white;
+	}
+
+@utility ds-button-primary-disabled {
+	background: var(--color-surface-panel-strong);
+	box-shadow: none;
+	color: var(--color-text-soft);
+	}
+
+@utility ds-nav-link {
+	color: var(--color-text-soft);
+	}
+
+@utility ds-nav-link-active {
+	color: var(--color-brand-600);
+	}
+
+@utility ds-step-label {
+	color: var(--color-text-strong);
+	font-weight: 700;
+	}
+
+@utility ds-step-copy {
+	color: var(--color-text-muted);
+	}

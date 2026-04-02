@@ -4,7 +4,8 @@
 
 Buildrop is an **Astro 6.x** app using **Bun**, **strict TypeScript**, **Tailwind CSS 4**,
 **lucide-astro** for icons, **Dropzone** for frontend-only drag-and-drop file selection,
-and **Convex** as its backend.
+**Convex** as its backend, and a lightweight **Tailwind v4 design system** defined in
+`src/styles/global.css`.
 
 Requires **Node >= 22.12.0**.
 
@@ -12,6 +13,7 @@ Requires **Node >= 22.12.0**.
 
 - Astro 6
 - Tailwind CSS 4 via `@tailwindcss/vite`
+- Tailwind v4 `@theme` tokens and `@utility ds-*` classes in `src/styles/global.css`
 - lucide-astro
 - dropzone
 - Convex
@@ -50,6 +52,7 @@ src/
 ├── layouts/
 ├── pages/
 ├── styles/
+│   └── global.css
 └── types/
 convex/
 ├── _generated/
@@ -84,10 +87,37 @@ tsconfig.json
 
 ### Styling
 
-- Prefer Tailwind utility classes for UI work
+- Read `src/styles/global.css` before changing shared UI patterns
+- Prefer the existing design system before adding one-off styling
+- Use Tailwind utility classes for layout and spacing, and shared `ds-*` utilities for repeated visual patterns
+- Reuse `@theme` tokens instead of hardcoded colors, radii, and shadows when matching an existing token
 - Use scoped `<style>` blocks for behavior-specific states or third-party selectors
-- Keep visual language consistent: rounded panels, blue/cyan gradients, slate neutrals
+- Keep visual language consistent: blue/cyan gradients, soft slate surfaces, rounded panels, and pill buttons
 - Keep landing pages compact above the fold when intended
+
+### Design System
+
+The current design system is CSS-first and lives in `src/styles/global.css`.
+
+- `@theme` defines the shared font, color, radius, and shadow tokens
+- `@layer base` sets global typography and focus styling
+- `@utility ds-*` provides shared visual patterns used by the current UI
+
+Current `ds-*` utilities:
+
+- `ds-page`
+- `ds-hero`
+- `ds-title`
+- `ds-subtitle`
+- `ds-surface`
+- `ds-dropzone`
+- `ds-icon-tile`
+- `ds-button-primary`
+- `ds-button-primary-disabled`
+- `ds-nav-link`
+- `ds-nav-link-active`
+- `ds-step-label`
+- `ds-step-copy`
 
 ### Client-Side UI
 
@@ -101,11 +131,12 @@ tsconfig.json
 ### `NavBar.astro`
 
 - Owns the top navigation/header
-- Uses Lucide icons
+- Uses Lucide icons and design-system navigation/icon utilities
 
 ### `BuildropDropzone.astro`
 
 - Owns the upload panel and frontend Dropzone integration
+- Uses `ds-surface`, `ds-dropzone`, and `ds-button-primary` for shared styling
 - Current reusable props:
   - `id`
   - `action`
