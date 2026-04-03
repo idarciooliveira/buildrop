@@ -1,0 +1,16 @@
+---
+import AuthForm from "../components/AuthForm.astro";
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout>
+  <main class="ds-page min-h-screen">
+    <AuthForm
+      mode="sign-in"
+      title="Sign in"
+      submitLabel="Sign in"
+      alternateHref="/sign-up"
+      alternateLabel="Need an account? Sign up"
+    />
+  </main>
+</Layout>

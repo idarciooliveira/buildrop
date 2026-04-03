@@ -1,0 +1,180 @@
+---
+interface Props {
+  mode: "sign-in" | "sign-up";
+  title: string;
+  submitLabel: string;
+  alternateHref: string;
+  alternateLabel: string;
+}
+
+const { mode, title, submitLabel, alternateHref, alternateLabel } = Astro.props;
+---
+
+<section class="flex min-h-screen items-center justify-center px-6 py-12">
+  <div class="ds-auth-card w-full max-w-md p-8">
+    <div class="text-center">
+      <p
+        class="text-sm font-semibold uppercase tracking-[0.24em] text-(--color-brand-600)"
+      >
+        Buildrop
+      </p>
+      <h1 class="ds-title mt-4 text-3xl">{title}</h1>
+    </div>
+
+    <form class="mt-8 space-y-5" data-auth-form data-mode={mode} novalidate>
+      <div class="space-y-2">
+        <label class="ds-auth-label" for={`${mode}-email`}>Email</label>
+        <input
+          id={`${mode}-email`}
+          name="email"
+          type="email"
+          autocomplete="email"
+          class="ds-auth-input"
+          required
+        />
+      </div>
+
+      <div class="space-y-2">
+        <label class="ds-auth-label" for={`${mode}-password`}>Password</label>
+        <input
+          id={`${mode}-password`}
+          name="password"
+          type="password"
+          autocomplete={mode === "sign-in"
+            ? "current-password"
+            : "new-password"}
+          class="ds-auth-input"
+          required
+        />
+      </div>
+
+      <p class="min-h-5 text-sm text-state-error" data-auth-error></p>
+
+      <button
+        type="submit"
+        class="ds-button-primary w-full px-5 py-3 text-base font-semibold"
+        data-auth-submit
+      >
+        {submitLabel}
+      </button>
+    </form>
+
+    <p class="mt-6 text-center text-sm text-(--color-text-soft)">
+      <a
+        href={alternateHref}
+        class="ds-nav-link-active font-medium hover:text-brand-700"
+      >
+        {alternateLabel}
+      </a>
+    </p>
+  </div>
+</section>
+
+<script>
+  import { authClient } from "../lib/auth-client";
+
+  const forms = document.querySelectorAll<HTMLFormElement>(
+    "form[data-auth-form]",
+  );
+
+  for (const form of forms) {
+    if (form.dataset.ready === "true") {
+      continue;
+    }
+
+    form.dataset.ready = "true";
+
+    const mode = form.dataset.mode;
+    const emailInput = form.elements.namedItem("email");
+    const passwordInput = form.elements.namedItem("password");
+    const errorText = form.querySelector<HTMLElement>("[data-auth-error]");
+    const submitButton =
+      form.querySelector<HTMLButtonElement>("[data-auth-submit]");
+
+    if (
+      !(emailInput instanceof HTMLInputElement) ||
+      !(passwordInput instanceof HTMLInputElement) ||
+      !(submitButton instanceof HTMLButtonElement)
+    ) {
+      continue;
+    }
+
+    const setError = (message = "") => {
+      if (errorText instanceof HTMLElement) {
+        errorText.textContent = message;
+      }
+    };
+
+    const getErrorMessage = (value: unknown) => {
+      if (!value || typeof value !== "object") {
+        return null;
+      }
+
+      const candidate = value as {
+        message?: unknown;
+        error?: { message?: unknown };
+        statusText?: unknown;
+      };
+
+      if (
+        typeof candidate.error?.message === "string" &&
+        candidate.error.message
+      ) {
+        return candidate.error.message;
+      }
+
+      if (typeof candidate.message === "string" && candidate.message) {
+        return candidate.message;
+      }
+
+      if (typeof candidate.statusText === "string" && candidate.statusText) {
+        return candidate.statusText;
+      }
+
+      return null;
+    };
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      setError("");
+      submitButton.disabled = true;
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!email || !password) {
+        setError("Email and password are required.");
+        submitButton.disabled = false;
+        return;
+      }
+
+      try {
+        const result =
+          mode === "sign-up"
+            ? await authClient.signUp.email({
+                email,
+                password,
+                name: email,
+              })
+            : await authClient.signIn.email({
+                email,
+                password,
+              });
+
+        if (result?.error) {
+          setError(getErrorMessage(result) ?? "Authentication failed.");
+          submitButton.disabled = false;
+          return;
+        }
+
+        window.location.href = "/";
+      } catch (error) {
+        setError(
+          getErrorMessage(error) ??
+            (error instanceof Error ? error.message : "Authentication failed."),
+        );
+        submitButton.disabled = false;
+      }
+    });
+  }
+</script>

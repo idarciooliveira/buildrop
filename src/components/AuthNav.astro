@@ -1,0 +1,79 @@
+<div class="flex items-center gap-3 text-sm font-medium" data-auth-nav>
+  <a
+    href="/sign-in"
+    class="ds-nav-link transition hover:text-brand-700"
+    data-auth-sign-in
+  >
+    Sign in
+  </a>
+  <a
+    href="/sign-up"
+    class="ds-button-primary px-4 py-2 text-sm font-semibold"
+    data-auth-sign-up
+  >
+    Sign up
+  </a>
+  <span class="hidden text-(--color-text-soft)" data-auth-email></span>
+  <button
+    type="button"
+    class="hidden ds-nav-link transition hover:text-brand-700"
+    data-auth-sign-out
+  >
+    Sign out
+  </button>
+</div>
+
+<script>
+  import { authClient } from "../lib/auth-client";
+
+  const navs = document.querySelectorAll<HTMLElement>("[data-auth-nav]");
+
+  for (const nav of navs) {
+    if (nav.dataset.ready === "true") {
+      continue;
+    }
+
+    nav.dataset.ready = "true";
+
+    const signInLink = nav.querySelector<HTMLElement>("[data-auth-sign-in]");
+    const signUpLink = nav.querySelector<HTMLElement>("[data-auth-sign-up]");
+    const emailText = nav.querySelector<HTMLElement>("[data-auth-email]");
+    const signOutButton = nav.querySelector<HTMLButtonElement>(
+      "[data-auth-sign-out]",
+    );
+
+    const applySession = (email?: string | null) => {
+      const authenticated = Boolean(email);
+
+      signInLink?.classList.toggle("hidden", authenticated);
+      signUpLink?.classList.toggle("hidden", authenticated);
+
+      if (emailText instanceof HTMLElement) {
+        emailText.textContent = email ?? "";
+        emailText.classList.toggle("hidden", !authenticated);
+      }
+
+      if (signOutButton instanceof HTMLButtonElement) {
+        signOutButton.classList.toggle("hidden", !authenticated);
+      }
+    };
+
+    try {
+      const session = await authClient.getSession();
+      applySession(session.data?.user?.email ?? null);
+    } catch {
+      applySession(null);
+    }
+
+    signOutButton?.addEventListener("click", async () => {
+      signOutButton.disabled = true;
+
+      try {
+        await authClient.signOut();
+        window.location.href = "/";
+      } catch {
+        signOutButton.disabled = false;
+      }
+    });
+  }
+</script>
