@@ -41,6 +41,7 @@ function SignInPage() {
 					<SignIn
 						routing="path"
 						path="/sign-in"
+						forceRedirectUrl="/dashboard"
 						appearance={{
 							variables: {
 								// Must exactly match CARD_BG so Clerk's own footer bg blends in

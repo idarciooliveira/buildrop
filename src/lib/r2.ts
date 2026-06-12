@@ -37,28 +37,6 @@ function getR2Client() {
 	});
 }
 
-export const createUploadUrl = createServerOnlyFn(
-	async function createUploadUrl({
-		key,
-		platform,
-	}: {
-		key: string;
-		platform: AppPlatform;
-	}) {
-		const config = requireR2Config();
-
-		return getSignedUrl(
-			getR2Client(),
-			new PutObjectCommand({
-				Bucket: config.bucket,
-				ContentType: contentTypeForPlatform(platform),
-				Key: key,
-			}),
-			{ expiresIn: 60 * 5 },
-		);
-	},
-);
-
 export const createDownloadUrl = createServerOnlyFn(
 	async function createDownloadUrl({
 		fileName,
@@ -94,6 +72,27 @@ export const getObjectBytes = createServerOnlyFn(async function getObjectBytes(
 	}
 
 	return Buffer.from(await object.Body.transformToByteArray());
+});
+
+export const putObject = createServerOnlyFn(async function putObject({
+	body,
+	key,
+	platform,
+}: {
+	body: Buffer;
+	key: string;
+	platform: AppPlatform;
+}) {
+	const config = requireR2Config();
+
+	await getR2Client().send(
+		new PutObjectCommand({
+			Body: body,
+			Bucket: config.bucket,
+			ContentType: contentTypeForPlatform(platform),
+			Key: key,
+		}),
+	);
 });
 
 export const deleteObject = createServerOnlyFn(async function deleteObject(

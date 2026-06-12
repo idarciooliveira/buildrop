@@ -3,6 +3,7 @@ import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
 import ClerkProvider from "../integrations/clerk/provider";
+import { getClerkPublishableKey } from "../lib/runtime-env";
 
 import appCss from "../styles.css?url";
 
@@ -31,12 +32,21 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+	const clerkPublishableKey = getClerkPublishableKey();
+
 	return (
-		<html lang="en">
+		<html
+			data-clerk-publishable-key={clerkPublishableKey}
+			lang="en"
+			suppressHydrationWarning
+		>
 			<head>
 				<HeadContent />
 			</head>
-			<body className="bg-slate-50 text-slate-950 antialiased">
+			<body
+				className="bg-slate-50 text-slate-950 antialiased"
+				suppressHydrationWarning
+			>
 				<ClerkProvider>
 					{children}
 					<TanStackDevtools

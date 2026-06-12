@@ -4,14 +4,17 @@ import { useEffect, useState, useTransition } from "react";
 
 import HeaderUser from "../integrations/clerk/header-user";
 import {
+	beginUpload,
 	completeUpload,
 	deleteMyApp,
-	getUploadUrl,
 	listMyApps,
 } from "../lib/apps";
 import { contentTypeForPlatform } from "../lib/platform";
+import { getClerkPublishableKey } from "../lib/runtime-env";
 
-export const Route = createFileRoute("/dashboard")({ component: Dashboard });
+export const Route = createFileRoute("/dashboard")({
+	component: DashboardRoute,
+});
 
 type AppRow = Awaited<ReturnType<typeof listMyApps>>[number];
 
@@ -33,6 +36,26 @@ function appVersion(app: AppRow) {
 	return parts.length
 		? parts.join(" (") + (parts.length > 1 ? ")" : "")
 		: "Unknown";
+}
+
+function DashboardRoute() {
+	if (!getClerkPublishableKey()) {
+		return (
+			<main className="flex min-h-screen items-center justify-center bg-slate-50 p-8">
+				<div className="max-w-lg rounded-3xl border border-red-200 bg-white p-8 shadow-sm">
+					<h1 className="text-xl font-bold text-slate-950">
+						Clerk is not configured
+					</h1>
+					<p className="mt-3 text-slate-600">
+						Set <code>VITE_CLERK_PUBLISHABLE_KEY</code> in your environment,
+						then restart the application.
+					</p>
+				</div>
+			</main>
+		);
+	}
+
+	return <Dashboard />;
 }
 
 function Dashboard() {
@@ -80,15 +103,20 @@ function Dashboard() {
 		setError(null);
 
 		try {
-			const upload = await getUploadUrl({ data: { fileName: file.name } });
-			const response = await fetch(upload.uploadUrl, {
+			const upload = await beginUpload({ data: { fileName: file.name } });
+			const query = new URLSearchParams({
+				fileName: file.name,
+				id: upload.id,
+				r2Key: upload.r2Key,
+			});
+			const response = await fetch(`/api/upload?${query}`, {
 				body: file,
 				headers: { "content-type": contentTypeForPlatform(upload.platform) },
-				method: "PUT",
+				method: "POST",
 			});
 
 			if (!response.ok) {
-				throw new Error("Upload to storage failed");
+				throw new Error((await response.text()) || "Upload to storage failed");
 			}
 
 			await completeUpload({

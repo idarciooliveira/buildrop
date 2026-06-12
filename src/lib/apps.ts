@@ -18,14 +18,13 @@ function requireString(value: unknown, name: string) {
 	return value.trim();
 }
 
-export const getUploadUrl = createServerFn({ method: "POST" })
+export const beginUpload = createServerFn({ method: "POST" })
 	.inputValidator((data) => {
 		const input = data as { fileName?: unknown };
 		return { fileName: requireString(input.fileName, "fileName") };
 	})
 	.handler(async ({ data }) => {
 		const { requireUserId } = await import("./auth");
-		const { createUploadUrl } = await import("./r2");
 		const userId = await requireUserId();
 		const platform = platformFromFileName(data.fileName);
 
@@ -36,9 +35,8 @@ export const getUploadUrl = createServerFn({ method: "POST" })
 		const id = nanoid(8);
 		const safeFileName = cleanFileName(data.fileName);
 		const r2Key = `${userId}/${id}/${safeFileName}`;
-		const uploadUrl = await createUploadUrl({ key: r2Key, platform });
 
-		return { id, platform, r2Key, uploadUrl };
+		return { id, platform, r2Key };
 	});
 
 export const completeUpload = createServerFn({ method: "POST" })

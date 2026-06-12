@@ -14,6 +14,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SignInSsoCallbackRouteImport } from './routes/sign-in/sso-callback'
 import { Route as DFileIdRouteImport } from './routes/d.$fileId'
+import { Route as ApiUploadRouteImport } from './routes/api.upload'
 import { Route as ApiManifestFileIdRouteImport } from './routes/api.manifest.$fileId'
 
 const SignInRoute = SignInRouteImport.update({
@@ -41,6 +42,11 @@ const DFileIdRoute = DFileIdRouteImport.update({
   path: '/d/$fileId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUploadRoute = ApiUploadRouteImport.update({
+  id: '/api/upload',
+  path: '/api/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiManifestFileIdRoute = ApiManifestFileIdRouteImport.update({
   id: '/api/manifest/$fileId',
   path: '/api/manifest/$fileId',
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/sign-in': typeof SignInRouteWithChildren
+  '/api/upload': typeof ApiUploadRoute
   '/d/$fileId': typeof DFileIdRoute
   '/sign-in/sso-callback': typeof SignInSsoCallbackRoute
   '/api/manifest/$fileId': typeof ApiManifestFileIdRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/sign-in': typeof SignInRouteWithChildren
+  '/api/upload': typeof ApiUploadRoute
   '/d/$fileId': typeof DFileIdRoute
   '/sign-in/sso-callback': typeof SignInSsoCallbackRoute
   '/api/manifest/$fileId': typeof ApiManifestFileIdRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/sign-in': typeof SignInRouteWithChildren
+  '/api/upload': typeof ApiUploadRoute
   '/d/$fileId': typeof DFileIdRoute
   '/sign-in/sso-callback': typeof SignInSsoCallbackRoute
   '/api/manifest/$fileId': typeof ApiManifestFileIdRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/sign-in'
+    | '/api/upload'
     | '/d/$fileId'
     | '/sign-in/sso-callback'
     | '/api/manifest/$fileId'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/sign-in'
+    | '/api/upload'
     | '/d/$fileId'
     | '/sign-in/sso-callback'
     | '/api/manifest/$fileId'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/sign-in'
+    | '/api/upload'
     | '/d/$fileId'
     | '/sign-in/sso-callback'
     | '/api/manifest/$fileId'
@@ -103,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   SignInRoute: typeof SignInRouteWithChildren
+  ApiUploadRoute: typeof ApiUploadRoute
   DFileIdRoute: typeof DFileIdRoute
   ApiManifestFileIdRoute: typeof ApiManifestFileIdRoute
 }
@@ -144,6 +157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DFileIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/upload': {
+      id: '/api/upload'
+      path: '/api/upload'
+      fullPath: '/api/upload'
+      preLoaderRoute: typeof ApiUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/manifest/$fileId': {
       id: '/api/manifest/$fileId'
       path: '/api/manifest/$fileId'
@@ -169,6 +189,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   SignInRoute: SignInRouteWithChildren,
+  ApiUploadRoute: ApiUploadRoute,
   DFileIdRoute: DFileIdRoute,
   ApiManifestFileIdRoute: ApiManifestFileIdRoute,
 }
