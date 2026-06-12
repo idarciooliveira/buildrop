@@ -1,4 +1,4 @@
-import { SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({ component: Home });
@@ -28,14 +28,12 @@ function Home() {
 							</Link>
 						</SignedIn>
 						<SignedOut>
-							<SignInButton mode="modal">
-								<button
-									className="rounded-full bg-cyan-300 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-200"
-									type="button"
-								>
-									Sign in to upload
-								</button>
-							</SignInButton>
+							<Link
+								className="rounded-full bg-cyan-300 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-200"
+								to="/sign-in"
+							>
+								Sign in to upload
+							</Link>
 						</SignedOut>
 					</div>
 				</div>

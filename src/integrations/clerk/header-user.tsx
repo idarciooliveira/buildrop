@@ -1,9 +1,5 @@
-import {
-	SignedIn,
-	SignedOut,
-	SignInButton,
-	UserButton,
-} from "@clerk/clerk-react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
+import { Link } from "@tanstack/react-router";
 
 export default function HeaderUser() {
 	return (
@@ -12,7 +8,12 @@ export default function HeaderUser() {
 				<UserButton />
 			</SignedIn>
 			<SignedOut>
-				<SignInButton />
+				<Link
+					className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+					to="/sign-in"
+				>
+					Sign in
+				</Link>
 			</SignedOut>
 		</>
 	);

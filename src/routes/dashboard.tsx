@@ -1,5 +1,5 @@
-import { RedirectToSignIn, useAuth } from "@clerk/clerk-react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAuth } from "@clerk/clerk-react";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useEffect, useState, useTransition } from "react";
 
 import HeaderUser from "../integrations/clerk/header-user";
@@ -129,7 +129,7 @@ function Dashboard() {
 	}
 
 	if (!isSignedIn) {
-		return <RedirectToSignIn />;
+		return <Navigate to="/sign-in" />;
 	}
 
 	return (

@@ -9,11 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SignInSsoCallbackRouteImport } from './routes/sign-in/sso-callback'
 import { Route as DFileIdRouteImport } from './routes/d.$fileId'
 import { Route as ApiManifestFileIdRouteImport } from './routes/api.manifest.$fileId'
 
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -23,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SignInSsoCallbackRoute = SignInSsoCallbackRouteImport.update({
+  id: '/sso-callback',
+  path: '/sso-callback',
+  getParentRoute: () => SignInRoute,
 } as any)
 const DFileIdRoute = DFileIdRouteImport.update({
   id: '/d/$fileId',
@@ -38,39 +50,72 @@ const ApiManifestFileIdRoute = ApiManifestFileIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/sign-in': typeof SignInRouteWithChildren
   '/d/$fileId': typeof DFileIdRoute
+  '/sign-in/sso-callback': typeof SignInSsoCallbackRoute
   '/api/manifest/$fileId': typeof ApiManifestFileIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/sign-in': typeof SignInRouteWithChildren
   '/d/$fileId': typeof DFileIdRoute
+  '/sign-in/sso-callback': typeof SignInSsoCallbackRoute
   '/api/manifest/$fileId': typeof ApiManifestFileIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/sign-in': typeof SignInRouteWithChildren
   '/d/$fileId': typeof DFileIdRoute
+  '/sign-in/sso-callback': typeof SignInSsoCallbackRoute
   '/api/manifest/$fileId': typeof ApiManifestFileIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/d/$fileId' | '/api/manifest/$fileId'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/sign-in'
+    | '/d/$fileId'
+    | '/sign-in/sso-callback'
+    | '/api/manifest/$fileId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/d/$fileId' | '/api/manifest/$fileId'
-  id: '__root__' | '/' | '/dashboard' | '/d/$fileId' | '/api/manifest/$fileId'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/sign-in'
+    | '/d/$fileId'
+    | '/sign-in/sso-callback'
+    | '/api/manifest/$fileId'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/sign-in'
+    | '/d/$fileId'
+    | '/sign-in/sso-callback'
+    | '/api/manifest/$fileId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  SignInRoute: typeof SignInRouteWithChildren
   DFileIdRoute: typeof DFileIdRoute
   ApiManifestFileIdRoute: typeof ApiManifestFileIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -84,6 +129,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/sign-in/sso-callback': {
+      id: '/sign-in/sso-callback'
+      path: '/sso-callback'
+      fullPath: '/sign-in/sso-callback'
+      preLoaderRoute: typeof SignInSsoCallbackRouteImport
+      parentRoute: typeof SignInRoute
     }
     '/d/$fileId': {
       id: '/d/$fileId'
@@ -102,9 +154,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface SignInRouteChildren {
+  SignInSsoCallbackRoute: typeof SignInSsoCallbackRoute
+}
+
+const SignInRouteChildren: SignInRouteChildren = {
+  SignInSsoCallbackRoute: SignInSsoCallbackRoute,
+}
+
+const SignInRouteWithChildren =
+  SignInRoute._addFileChildren(SignInRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  SignInRoute: SignInRouteWithChildren,
   DFileIdRoute: DFileIdRoute,
   ApiManifestFileIdRoute: ApiManifestFileIdRoute,
 }
