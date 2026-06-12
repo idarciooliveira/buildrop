@@ -11,11 +11,13 @@ function Home() {
 			<div className="pointer-events-none absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-cyan-400/10 blur-3xl" />
 			<section className="relative mx-auto grid min-h-screen max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-[1.15fr_0.85fr]">
 				<div className="max-w-3xl">
-					<BrandLogo
-						className="mb-12 text-white"
-						markClassName="h-12 w-12"
-						textClassName="text-xl"
-					/>
+				<BrandLogo
+					animated
+					neon
+					className="mb-12 text-white"
+					markClassName="h-12 w-12"
+					textClassName="text-xl"
+				/>
 					<p className="mb-4 inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100">
 						Build drops for iOS and Android testers
 					</p>
@@ -47,11 +49,11 @@ function Home() {
 				</div>
 				<div className="relative mx-auto hidden w-full max-w-md lg:block">
 					<div className="absolute inset-16 rounded-full bg-cyan-300/20 blur-3xl" />
-					<img
-						alt="Buildrop 3D logo"
-						className="relative w-full drop-shadow-[0_30px_45px_rgba(34,211,238,0.22)]"
-						src="/brand/buildrop-mark.png"
-					/>
+				<img
+					alt="Buildrop 3D logo"
+					className="hero-neon-float relative w-full"
+					src="/brand/buildrop-mark.png"
+				/>
 				</div>
 			</section>
 		</main>

@@ -15,3 +15,109 @@ body {
   margin: 0;
 }
 
+/* ── Logo gravity-float ───────────────────────────────────────────── */
+@keyframes gravity-float {
+  0%, 100% {
+    transform: translateY(0px);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+  50% {
+    transform: translateY(-7px);
+    animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  }
+}
+
+/* ── Hero image gravity-float (larger arc) ───────────────────────── */
+@keyframes hero-gravity-float {
+  0%, 100% {
+    transform: translateY(0px);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+  50% {
+    transform: translateY(-22px);
+    animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  }
+}
+
+/* ── Neon text pulse ─────────────────────────────────────────────── */
+@keyframes neon-pulse {
+  0%, 100% {
+    text-shadow:
+      0 0 4px rgba(103, 232, 249, 0.9),
+      0 0 10px rgba(34, 211, 238, 0.6),
+      0 0 22px rgba(6, 182, 212, 0.35);
+  }
+  50% {
+    text-shadow:
+      0 0 6px rgba(103, 232, 249, 1),
+      0 0 18px rgba(34, 211, 238, 1),
+      0 0 42px rgba(6, 182, 212, 0.75),
+      0 0 70px rgba(8, 145, 178, 0.4);
+  }
+}
+
+/* ── Neon drop-shadow ring around logo mark ──────────────────────── */
+@keyframes neon-ring {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 4px rgba(34, 211, 238, 0.65))
+      drop-shadow(0 0 10px rgba(6, 182, 212, 0.35));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 8px rgba(34, 211, 238, 1))
+      drop-shadow(0 0 20px rgba(6, 182, 212, 0.8))
+      drop-shadow(0 0 36px rgba(8, 145, 178, 0.45));
+  }
+}
+
+/* ── Hero image: float + neon glow combined ──────────────────────── */
+@keyframes hero-neon-float {
+  0%, 100% {
+    transform: translateY(0px);
+    filter:
+      drop-shadow(0 30px 45px rgba(34, 211, 238, 0.22))
+      drop-shadow(0 0 16px rgba(34, 211, 238, 0.3));
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+  50% {
+    transform: translateY(-22px);
+    filter:
+      drop-shadow(0 42px 62px rgba(34, 211, 238, 0.48))
+      drop-shadow(0 0 34px rgba(34, 211, 238, 0.65))
+      drop-shadow(0 0 60px rgba(6, 182, 212, 0.3));
+    animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  }
+}
+
+/* ── Utility classes ─────────────────────────────────────────────── */
+.logo-gravity {
+  animation: gravity-float 3.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+.logo-neon-text {
+  animation: neon-pulse 2.8s ease-in-out infinite;
+}
+
+.logo-neon-mark {
+  animation: gravity-float 3.2s ease-in-out infinite, neon-ring 2.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-neon-float {
+  animation: hero-neon-float 4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-gravity,
+  .logo-neon-text,
+  .logo-neon-mark,
+  .hero-neon-float {
+    animation: none;
+    filter: none;
+    text-shadow: none;
+  }
+}
+
