@@ -1,0 +1,166 @@
+import { createServerFn } from "@tanstack/react-start";
+import { and, desc, eq } from "drizzle-orm";
+import { nanoid } from "nanoid";
+
+import { db } from "../db/index";
+import { apps } from "../db/schema";
+import { platformFromFileName } from "./platform";
+
+function cleanFileName(fileName: string) {
+	return fileName.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 180);
+}
+
+function requireString(value: unknown, name: string) {
+	if (typeof value !== "string" || !value.trim()) {
+		throw new Error(`${name} is required`);
+	}
+
+	return value.trim();
+}
+
+export const getUploadUrl = createServerFn({ method: "POST" })
+	.inputValidator((data) => {
+		const input = data as { fileName?: unknown };
+		return { fileName: requireString(input.fileName, "fileName") };
+	})
+	.handler(async ({ data }) => {
+		const { requireUserId } = await import("./auth");
+		const { createUploadUrl } = await import("./r2");
+		const userId = await requireUserId();
+		const platform = platformFromFileName(data.fileName);
+
+		if (!platform) {
+			throw new Error("Only .ipa and .apk files are supported");
+		}
+
+		const id = nanoid(8);
+		const safeFileName = cleanFileName(data.fileName);
+		const r2Key = `${userId}/${id}/${safeFileName}`;
+		const uploadUrl = await createUploadUrl({ key: r2Key, platform });
+
+		return { id, platform, r2Key, uploadUrl };
+	});
+
+export const completeUpload = createServerFn({ method: "POST" })
+	.inputValidator((data) => {
+		const input = data as { fileName?: unknown; id?: unknown; r2Key?: unknown };
+
+		return {
+			fileName: requireString(input.fileName, "fileName"),
+			id: requireString(input.id, "id"),
+			r2Key: requireString(input.r2Key, "r2Key"),
+		};
+	})
+	.handler(async ({ data }) => {
+		const { requireUserId } = await import("./auth");
+		const { extractMetadata } = await import("./metadata");
+		const { getObjectBytes } = await import("./r2");
+		const userId = await requireUserId();
+		const platform = platformFromFileName(data.fileName);
+
+		if (!platform) {
+			throw new Error("Only .ipa and .apk files are supported");
+		}
+
+		if (!data.r2Key.startsWith(`${userId}/${data.id}/`)) {
+			throw new Error("Invalid upload key");
+		}
+
+		const bytes = await getObjectBytes(data.r2Key);
+		const metadata = await extractMetadata({
+			bytes,
+			fileName: cleanFileName(data.fileName),
+			platform,
+		});
+
+		const [app] = await db
+			.insert(apps)
+			.values({
+				fileName: data.fileName,
+				id: data.id,
+				metadata,
+				platform,
+				r2Key: data.r2Key,
+				userId,
+			})
+			.returning();
+
+		return app;
+	});
+
+export const listMyApps = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const { requireUserId } = await import("./auth");
+		const userId = await requireUserId();
+
+		return db
+			.select()
+			.from(apps)
+			.where(eq(apps.userId, userId))
+			.orderBy(desc(apps.createdAt));
+	},
+);
+
+export const deleteMyApp = createServerFn({ method: "POST" })
+	.inputValidator((data) => {
+		const input = data as { id?: unknown };
+		return { id: requireString(input.id, "id") };
+	})
+	.handler(async ({ data }) => {
+		const { requireUserId } = await import("./auth");
+		const { deleteObject } = await import("./r2");
+		const userId = await requireUserId();
+		const [app] = await db
+			.select()
+			.from(apps)
+			.where(and(eq(apps.id, data.id), eq(apps.userId, userId)))
+			.limit(1);
+
+		if (!app) {
+			throw new Error("App not found");
+		}
+
+		await deleteObject(app.r2Key);
+		await db
+			.delete(apps)
+			.where(and(eq(apps.id, data.id), eq(apps.userId, userId)));
+
+		return { ok: true };
+	});
+
+export const getPublicApp = createServerFn({ method: "GET" })
+	.inputValidator((data) => {
+		const input = data as { id?: unknown };
+		return { id: requireString(input.id, "id") };
+	})
+	.handler(async ({ data }) => {
+		const [app] = await db
+			.select()
+			.from(apps)
+			.where(eq(apps.id, data.id))
+			.limit(1);
+
+		return app ?? null;
+	});
+
+export const getDownloadUrl = createServerFn({ method: "POST" })
+	.inputValidator((data) => {
+		const input = data as { id?: unknown };
+		return { id: requireString(input.id, "id") };
+	})
+	.handler(async ({ data }) => {
+		const { createDownloadUrl } = await import("./r2");
+		const [app] = await db
+			.select()
+			.from(apps)
+			.where(eq(apps.id, data.id))
+			.limit(1);
+
+		if (!app) {
+			throw new Error("App not found");
+		}
+
+		return {
+			url: await createDownloadUrl({ fileName: app.fileName, key: app.r2Key }),
+		};
+	});
