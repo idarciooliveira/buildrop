@@ -3,6 +3,7 @@ import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { BrandLogo } from "../components/brand-logo";
+import { BuildShareDialog } from "../components/build-share-dialog";
 import {
 	UploadProgressPanel,
 	type UploadState,
@@ -17,6 +18,7 @@ import {
 } from "../lib/apps";
 import { contentTypeForPlatform } from "../lib/platform";
 import { getClerkPublishableKey } from "../lib/runtime-env";
+import { buildAppShareUrl } from "../lib/share-url";
 import { UploadCancelledError, uploadFile } from "../lib/upload-file";
 
 export const Route = createFileRoute("/dashboard")({
@@ -84,9 +86,18 @@ function Dashboard() {
 	const [apps, setApps] = useState<Array<AppRow>>([]);
 	const [storage, setStorage] = useState<StorageSummary | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [copyNotice, setCopyNotice] = useState<string | null>(null);
+	const [copiedAppId, setCopiedAppId] = useState<string | null>(null);
+	const [shareTarget, setShareTarget] = useState<{
+		fileName: string;
+		platform: AppRow["platform"];
+		shareUrl: string;
+		title: string;
+	} | null>(null);
 	const [appToDelete, setAppToDelete] = useState<AppRow | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [uploadState, setUploadState] = useState<UploadState | null>(null);
+	const copyNoticeTimeoutRef = useRef<number | null>(null);
 	const abortUploadRef = useRef<(() => void) | null>(null);
 	const [isPending, startTransition] = useTransition();
 	const isUploading =
@@ -138,6 +149,14 @@ function Dashboard() {
 		const timeout = window.setTimeout(() => setUploadState(null), 4000);
 		return () => window.clearTimeout(timeout);
 	}, [uploadState?.phase]);
+
+	useEffect(() => {
+		return () => {
+			if (copyNoticeTimeoutRef.current !== null) {
+				window.clearTimeout(copyNoticeTimeoutRef.current);
+			}
+		};
+	}, []);
 
 	async function onUpload(event: React.ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0];
@@ -265,8 +284,31 @@ function Dashboard() {
 	}
 
 	async function copyLink(id: string) {
-		const url = `${window.location.origin}/d/${id}`;
-		await navigator.clipboard.writeText(url);
+		try {
+			const url = buildAppShareUrl(window.location.origin, id);
+			await navigator.clipboard.writeText(url);
+			setCopiedAppId(id);
+			setCopyNotice("Build link copied to clipboard.");
+			if (copyNoticeTimeoutRef.current !== null) {
+				window.clearTimeout(copyNoticeTimeoutRef.current);
+			}
+			copyNoticeTimeoutRef.current = window.setTimeout(() => {
+				setCopyNotice(null);
+				setCopiedAppId(null);
+				copyNoticeTimeoutRef.current = null;
+			}, 3000);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Failed to copy link");
+		}
+	}
+
+	function openShareDialog(app: AppRow) {
+		setShareTarget({
+			fileName: app.fileName,
+			platform: app.platform,
+			shareUrl: buildAppShareUrl(window.location.origin, app.id),
+			title: appTitle(app),
+		});
 	}
 
 	if (!isLoaded) {
@@ -363,6 +405,15 @@ function Dashboard() {
 					</div>
 				) : null}
 
+				{copyNotice ? (
+					<div
+						aria-live="polite"
+						className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"
+					>
+						{copyNotice}
+					</div>
+				) : null}
+
 				<div className="mt-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
 					{apps.length === 0 ? (
 						<div className="p-10 text-center text-slate-500">
@@ -411,7 +462,14 @@ function Dashboard() {
 											onClick={() => copyLink(app.id)}
 											type="button"
 										>
-											Copy link
+											{copiedAppId === app.id ? "Copied" : "Copy link"}
+										</button>
+										<button
+											className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100"
+											onClick={() => openShareDialog(app)}
+											type="button"
+										>
+											QR code
 										</button>
 										<Link
 											className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold transition hover:bg-slate-50"
@@ -490,6 +548,15 @@ function Dashboard() {
 						</div>
 					</div>
 				</div>
+			) : null}
+			{shareTarget ? (
+				<BuildShareDialog
+					fileName={shareTarget.fileName}
+					onDismiss={() => setShareTarget(null)}
+					platform={shareTarget.platform}
+					shareUrl={shareTarget.shareUrl}
+					title={shareTarget.title}
+				/>
 			) : null}
 		</main>
 	);
