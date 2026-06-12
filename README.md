@@ -25,6 +25,32 @@ This project uses [Vitest](https://vitest.dev/) for testing. You can run the tes
 npm run test
 ```
 
+## R2 browser upload CORS
+
+Uploads go directly from the browser to R2 using a short-lived presigned `PUT`
+URL when the bucket allows the application origin. Configure the R2 bucket's
+CORS policy to allow each application origin:
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "https://your-production-domain.example"
+    ],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["Content-Type"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Set this policy in the Cloudflare dashboard under the R2 bucket's CORS settings.
+Without it, browsers block direct uploads during the CORS preflight and the
+application automatically retries through its streaming same-origin upload
+endpoint.
+
 ## Styling
 
 This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.

@@ -4,7 +4,9 @@ import { nanoid } from "nanoid";
 
 import { db } from "../db/index";
 import { apps } from "../db/schema";
-import { platformFromFileName } from "./platform";
+import { contentTypeForPlatform, platformFromFileName } from "./platform";
+
+const MAX_SINGLE_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024;
 
 function cleanFileName(fileName: string) {
 	return fileName.replace(/[^a-zA-Z0-9._ -]/g, "_").slice(0, 180);
@@ -18,13 +20,30 @@ function requireString(value: unknown, name: string) {
 	return value.trim();
 }
 
+function requireFileSize(value: unknown) {
+	if (
+		typeof value !== "number" ||
+		!Number.isSafeInteger(value) ||
+		value <= 0 ||
+		value > MAX_SINGLE_UPLOAD_BYTES
+	) {
+		throw new Error("File size must be between 1 byte and 5 GiB");
+	}
+
+	return value;
+}
+
 export const beginUpload = createServerFn({ method: "POST" })
 	.inputValidator((data) => {
-		const input = data as { fileName?: unknown };
-		return { fileName: requireString(input.fileName, "fileName") };
+		const input = data as { fileName?: unknown; fileSize?: unknown };
+		return {
+			fileName: requireString(input.fileName, "fileName"),
+			fileSize: requireFileSize(input.fileSize),
+		};
 	})
 	.handler(async ({ data }) => {
 		const { requireUserId } = await import("./auth");
+		const { createUploadUrl } = await import("./r2");
 		const userId = await requireUserId();
 		const platform = platformFromFileName(data.fileName);
 
@@ -36,15 +55,30 @@ export const beginUpload = createServerFn({ method: "POST" })
 		const safeFileName = cleanFileName(data.fileName);
 		const r2Key = `${userId}/${id}/${safeFileName}`;
 
-		return { id, platform, r2Key };
+		return {
+			id,
+			platform,
+			r2Key,
+			uploadUrl: await createUploadUrl({
+				key: r2Key,
+				platform,
+				size: data.fileSize,
+			}),
+		};
 	});
 
 export const completeUpload = createServerFn({ method: "POST" })
 	.inputValidator((data) => {
-		const input = data as { fileName?: unknown; id?: unknown; r2Key?: unknown };
+		const input = data as {
+			fileName?: unknown;
+			fileSize?: unknown;
+			id?: unknown;
+			r2Key?: unknown;
+		};
 
 		return {
 			fileName: requireString(input.fileName, "fileName"),
+			fileSize: requireFileSize(input.fileSize),
 			id: requireString(input.id, "id"),
 			r2Key: requireString(input.r2Key, "r2Key"),
 		};
@@ -52,7 +86,7 @@ export const completeUpload = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		const { requireUserId } = await import("./auth");
 		const { extractMetadata } = await import("./metadata");
-		const { getObjectBytes } = await import("./r2");
+		const { getObjectBytes, getObjectInfo } = await import("./r2");
 		const userId = await requireUserId();
 		const platform = platformFromFileName(data.fileName);
 
@@ -62,6 +96,16 @@ export const completeUpload = createServerFn({ method: "POST" })
 
 		if (!data.r2Key.startsWith(`${userId}/${data.id}/`)) {
 			throw new Error("Invalid upload key");
+		}
+
+		const object = await getObjectInfo(data.r2Key);
+
+		if (object.contentLength !== data.fileSize) {
+			throw new Error("Uploaded file size does not match the selected file");
+		}
+
+		if (object.contentType !== contentTypeForPlatform(platform)) {
+			throw new Error("Uploaded file type does not match the selected file");
 		}
 
 		const bytes = await getObjectBytes(data.r2Key);

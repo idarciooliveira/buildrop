@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { platformFromFileName } from "../lib/platform";
+import { contentTypeForPlatform, platformFromFileName } from "../lib/platform";
+
+const MAX_SINGLE_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024;
 
 function requiredQueryParam(url: URL, name: string) {
 	const value = url.searchParams.get(name)?.trim();
@@ -12,15 +14,30 @@ function requiredQueryParam(url: URL, name: string) {
 	return value;
 }
 
+function requiredFileSize(url: URL) {
+	const size = Number(url.searchParams.get("fileSize"));
+
+	if (
+		!Number.isSafeInteger(size) ||
+		size <= 0 ||
+		size > MAX_SINGLE_UPLOAD_BYTES
+	) {
+		throw new Error("Invalid file size");
+	}
+
+	return size;
+}
+
 export const Route = createFileRoute("/api/upload")({
 	server: {
 		handlers: {
-			POST: async ({ request }) => {
+			PUT: async ({ request }) => {
 				try {
 					const { requireUserId } = await import("../lib/auth");
-					const { putObject } = await import("../lib/r2");
+					const { putObjectStream } = await import("../lib/r2");
 					const url = new URL(request.url);
 					const fileName = requiredQueryParam(url, "fileName");
+					const fileSize = requiredFileSize(url);
 					const id = requiredQueryParam(url, "id");
 					const r2Key = requiredQueryParam(url, "r2Key");
 					const platform = platformFromFileName(fileName);
@@ -36,10 +53,22 @@ export const Route = createFileRoute("/api/upload")({
 						return new Response("Invalid upload key", { status: 400 });
 					}
 
-					await putObject({
-						body: Buffer.from(await request.arrayBuffer()),
+					if (
+						request.headers.get("content-type") !==
+						contentTypeForPlatform(platform)
+					) {
+						return new Response("Invalid content type", { status: 400 });
+					}
+
+					if (!request.body) {
+						return new Response("Upload body is required", { status: 400 });
+					}
+
+					await putObjectStream({
+						body: request.body,
 						key: r2Key,
 						platform,
+						size: fileSize,
 					});
 
 					return Response.json({ ok: true });

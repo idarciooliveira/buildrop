@@ -1,7 +1,11 @@
 import { useAuth } from "@clerk/clerk-react";
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
+import {
+	UploadProgressPanel,
+	type UploadState,
+} from "../components/upload-progress-panel";
 import HeaderUser from "../integrations/clerk/header-user";
 import {
 	beginUpload,
@@ -11,6 +15,7 @@ import {
 } from "../lib/apps";
 import { contentTypeForPlatform } from "../lib/platform";
 import { getClerkPublishableKey } from "../lib/runtime-env";
+import { UploadCancelledError, uploadFile } from "../lib/upload-file";
 
 export const Route = createFileRoute("/dashboard")({
 	component: DashboardRoute,
@@ -62,8 +67,15 @@ function Dashboard() {
 	const { isLoaded, isSignedIn } = useAuth();
 	const [apps, setApps] = useState<Array<AppRow>>([]);
 	const [error, setError] = useState<string | null>(null);
-	const [isUploading, setIsUploading] = useState(false);
+	const [appToDelete, setAppToDelete] = useState<AppRow | null>(null);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const [uploadState, setUploadState] = useState<UploadState | null>(null);
+	const abortUploadRef = useRef<(() => void) | null>(null);
 	const [isPending, startTransition] = useTransition();
+	const isUploading =
+		uploadState !== null &&
+		uploadState.phase !== "completed" &&
+		uploadState.phase !== "failed";
 
 	function refreshApps() {
 		startTransition(async () => {
@@ -91,6 +103,15 @@ function Dashboard() {
 		});
 	}, [isLoaded, isSignedIn]);
 
+	useEffect(() => {
+		if (uploadState?.phase !== "completed") {
+			return;
+		}
+
+		const timeout = window.setTimeout(() => setUploadState(null), 4000);
+		return () => window.clearTimeout(timeout);
+	}, [uploadState?.phase]);
+
 	async function onUpload(event: React.ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0];
 		event.target.value = "";
@@ -99,51 +120,119 @@ function Dashboard() {
 			return;
 		}
 
-		setIsUploading(true);
 		setError(null);
+		setUploadState({
+			fileName: file.name,
+			loadedBytes: 0,
+			phase: "preparing",
+			progress: 0,
+			totalBytes: file.size,
+			transport: "direct",
+		});
 
 		try {
-			const upload = await beginUpload({ data: { fileName: file.name } });
-			const query = new URLSearchParams({
+			const upload = await beginUpload({
+				data: { fileName: file.name, fileSize: file.size },
+			});
+			const fallbackQuery = new URLSearchParams({
 				fileName: file.name,
+				fileSize: file.size.toString(),
 				id: upload.id,
 				r2Key: upload.r2Key,
 			});
-			const response = await fetch(`/api/upload?${query}`, {
-				body: file,
-				headers: { "content-type": contentTypeForPlatform(upload.platform) },
-				method: "POST",
+			setUploadState({
+				fileName: file.name,
+				loadedBytes: 0,
+				phase: "uploading",
+				progress: 0,
+				totalBytes: file.size,
+				transport: "direct",
 			});
+			const uploadRequest = uploadFile({
+				body: file,
+				contentType: contentTypeForPlatform(upload.platform),
+				fallbackUrl: `/api/upload?${fallbackQuery}`,
+				onFallback: () => {
+					setUploadState({
+						fileName: file.name,
+						loadedBytes: 0,
+						phase: "uploading",
+						progress: 0,
+						totalBytes: file.size,
+						transport: "proxy",
+					});
+				},
+				onProgress: (progress) => {
+					setUploadState((current) => ({
+						fileName: file.name,
+						loadedBytes: progress.loadedBytes,
+						phase: "uploading",
+						progress: progress.percentage,
+						totalBytes: progress.totalBytes,
+						transport: current?.transport ?? "direct",
+					}));
+				},
+				url: upload.uploadUrl,
+			});
+			abortUploadRef.current = uploadRequest.abort;
+			await uploadRequest.promise;
+			abortUploadRef.current = null;
 
-			if (!response.ok) {
-				throw new Error((await response.text()) || "Upload to storage failed");
-			}
-
+			setUploadState((current) => ({
+				fileName: file.name,
+				loadedBytes: file.size,
+				phase: "processing",
+				progress: 100,
+				totalBytes: file.size,
+				transport: current?.transport ?? "direct",
+			}));
 			await completeUpload({
 				data: {
 					fileName: file.name,
+					fileSize: file.size,
 					id: upload.id,
 					r2Key: upload.r2Key,
 				},
 			});
 			refreshApps();
+			setUploadState((current) => ({
+				fileName: file.name,
+				loadedBytes: file.size,
+				phase: "completed",
+				progress: 100,
+				totalBytes: file.size,
+				transport: current?.transport ?? "direct",
+			}));
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Upload failed");
-		} finally {
-			setIsUploading(false);
+			abortUploadRef.current = null;
+			const message = err instanceof Error ? err.message : "Upload failed";
+			if (!(err instanceof UploadCancelledError)) {
+				setError(message);
+			}
+			setUploadState((current) => ({
+				error: message,
+				fileName: current?.fileName ?? file.name,
+				loadedBytes: current?.loadedBytes ?? 0,
+				phase: "failed",
+				progress: current?.progress ?? 0,
+				totalBytes: current?.totalBytes ?? file.size,
+				transport: current?.transport ?? "direct",
+			}));
 		}
 	}
 
-	async function onDelete(id: string) {
-		if (!window.confirm("Delete this build?")) {
-			return;
-		}
+	async function onDelete() {
+		if (!appToDelete) return;
 
+		setIsDeleting(true);
 		try {
-			await deleteMyApp({ data: { id } });
-			setApps((current) => current.filter((app) => app.id !== id));
+			await deleteMyApp({ data: { id: appToDelete.id } });
+			setApps((current) => current.filter((app) => app.id !== appToDelete.id));
+			setAppToDelete(null);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Delete failed");
+		} finally {
+			setIsDeleting(false);
 		}
 	}
 
@@ -257,7 +346,7 @@ function Dashboard() {
 										</Link>
 										<button
 											className="rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
-											onClick={() => onDelete(app.id)}
+											onClick={() => setAppToDelete(app)}
 											type="button"
 										>
 											Delete
@@ -269,6 +358,63 @@ function Dashboard() {
 					)}
 				</div>
 			</section>
+			{uploadState ? (
+				<UploadProgressPanel
+					onDismiss={() => setUploadState(null)}
+					onStop={() => abortUploadRef.current?.()}
+					upload={uploadState}
+				/>
+			) : null}
+			{appToDelete ? (
+				<div
+					aria-labelledby="delete-dialog-title"
+					aria-modal="true"
+					className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4"
+					onKeyDown={(event) => {
+						if (event.key === "Escape" && !isDeleting) setAppToDelete(null);
+					}}
+					onMouseDown={(event) => {
+						if (event.target === event.currentTarget && !isDeleting) {
+							setAppToDelete(null);
+						}
+					}}
+					role="dialog"
+				>
+					<div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+						<h2
+							className="text-xl font-bold text-slate-950"
+							id="delete-dialog-title"
+						>
+							Delete build?
+						</h2>
+						<p className="mt-3 text-slate-600">
+							Are you sure you want to delete{" "}
+							<span className="font-semibold text-slate-900">
+								{appTitle(appToDelete)}
+							</span>
+							? This action cannot be undone.
+						</p>
+						<div className="mt-6 flex justify-end gap-3">
+							<button
+								className="rounded-xl border border-slate-200 px-4 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+								disabled={isDeleting}
+								onClick={() => setAppToDelete(null)}
+								type="button"
+							>
+								Cancel
+							</button>
+							<button
+								className="rounded-xl bg-red-600 px-4 py-2 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+								disabled={isDeleting}
+								onClick={onDelete}
+								type="button"
+							>
+								{isDeleting ? "Deleting..." : "Delete build"}
+							</button>
+						</div>
+					</div>
+				</div>
+			) : null}
 		</main>
 	);
 }

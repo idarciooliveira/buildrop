@@ -1,6 +1,10 @@
+import { Readable } from "node:stream";
+import type { ReadableStream as NodeReadableStream } from "node:stream/web";
+
 import {
 	DeleteObjectCommand,
 	GetObjectCommand,
+	HeadObjectCommand,
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
@@ -34,6 +38,7 @@ function getR2Client() {
 		endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
 		forcePathStyle: true,
 		region: "auto",
+		requestChecksumCalculation: "WHEN_REQUIRED",
 	});
 }
 
@@ -59,6 +64,45 @@ export const createDownloadUrl = createServerOnlyFn(
 	},
 );
 
+export const createUploadUrl = createServerOnlyFn(
+	async function createUploadUrl({
+		key,
+		platform,
+		size,
+	}: {
+		key: string;
+		platform: AppPlatform;
+		size: number;
+	}) {
+		const config = requireR2Config();
+
+		return getSignedUrl(
+			getR2Client(),
+			new PutObjectCommand({
+				Bucket: config.bucket,
+				ContentLength: size,
+				ContentType: contentTypeForPlatform(platform),
+				Key: key,
+			}),
+			{ expiresIn: 60 * 60 },
+		);
+	},
+);
+
+export const getObjectInfo = createServerOnlyFn(async function getObjectInfo(
+	key: string,
+) {
+	const config = requireR2Config();
+	const object = await getR2Client().send(
+		new HeadObjectCommand({ Bucket: config.bucket, Key: key }),
+	);
+
+	return {
+		contentLength: object.ContentLength ?? null,
+		contentType: object.ContentType ?? null,
+	};
+});
+
 export const getObjectBytes = createServerOnlyFn(async function getObjectBytes(
 	key: string,
 ) {
@@ -74,26 +118,31 @@ export const getObjectBytes = createServerOnlyFn(async function getObjectBytes(
 	return Buffer.from(await object.Body.transformToByteArray());
 });
 
-export const putObject = createServerOnlyFn(async function putObject({
-	body,
-	key,
-	platform,
-}: {
-	body: Buffer;
-	key: string;
-	platform: AppPlatform;
-}) {
-	const config = requireR2Config();
+export const putObjectStream = createServerOnlyFn(
+	async function putObjectStream({
+		body,
+		key,
+		platform,
+		size,
+	}: {
+		body: ReadableStream<Uint8Array>;
+		key: string;
+		platform: AppPlatform;
+		size: number;
+	}) {
+		const config = requireR2Config();
 
-	await getR2Client().send(
-		new PutObjectCommand({
-			Body: body,
-			Bucket: config.bucket,
-			ContentType: contentTypeForPlatform(platform),
-			Key: key,
-		}),
-	);
-});
+		await getR2Client().send(
+			new PutObjectCommand({
+				Body: Readable.fromWeb(body as NodeReadableStream<Uint8Array>),
+				Bucket: config.bucket,
+				ContentLength: size,
+				ContentType: contentTypeForPlatform(platform),
+				Key: key,
+			}),
+		);
+	},
+);
 
 export const deleteObject = createServerOnlyFn(async function deleteObject(
 	key: string,
