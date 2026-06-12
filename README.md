@@ -1,35 +1,138 @@
-Welcome to your new TanStack Start app! 
+# Buildrop
 
-# Getting Started
+Buildrop is a self-hosted build distribution app for iOS and Android testers.
+Authenticated users upload `.ipa` and `.apk` files, Buildrop extracts their app
+metadata, stores the binaries in Cloudflare R2, and creates short public
+download pages.
 
-To run this application:
+## Features
+
+- Clerk-authenticated upload dashboard
+- IPA and APK metadata extraction, including icons and version details
+- Real byte-based upload progress with cancellation
+- Direct browser-to-R2 uploads with an automatic streaming server fallback
+- Public download pages and expiring R2 download URLs
+- iOS over-the-air installation manifests
+- Per-user build listing and deletion
+- Per-user storage quotas with a default 1 GiB limit
+
+## Stack
+
+| Area | Technology |
+| --- | --- |
+| Application | React 19, TanStack Start, TanStack Router |
+| Styling | Tailwind CSS 4 |
+| Authentication | Clerk |
+| Database | PostgreSQL, Drizzle ORM, Drizzle Kit |
+| Object storage | Cloudflare R2 through its S3-compatible API |
+| Metadata extraction | `app-info-parser` |
+| Build/runtime | Vite, Nitro, Node.js 22 |
+| Tests and linting | Vitest, Testing Library, Biome |
+
+For the system design and request flows, see
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Prerequisites
+
+- Node.js 22
+- npm
+- PostgreSQL
+- A Clerk application
+- A Cloudflare R2 bucket and API token with object read/write/delete access
+
+## Local Setup
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Create the local environment file:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+3. Fill in every value in `.env.local`.
+
+4. Create the database if needed and apply migrations:
+
+   ```bash
+   npm run db:ensure
+   npx drizzle-kit migrate
+   ```
+
+5. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+The app normally starts at `http://localhost:3000`. Vite selects another port
+when port 3000 is already occupied.
+
+## Environment Variables
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Yes | Clerk key exposed to the browser and reused by server authentication |
+| `CLERK_SECRET_KEY` | Yes | Authenticates server-side Clerk requests |
+| `DATABASE_URL` | Yes | PostgreSQL connection URL |
+| `R2_ACCOUNT_ID` | Yes | Cloudflare account containing the R2 bucket |
+| `R2_ACCESS_KEY_ID` | Yes | R2 S3 API token access key |
+| `R2_SECRET_ACCESS_KEY` | Yes | R2 S3 API token secret |
+| `R2_BUCKET_NAME` | Yes | Private bucket used for build binaries |
+
+Never commit `.env.local` or expose Clerk secret keys, database credentials, or
+R2 credentials to client code.
+
+## Service Configuration
+
+### Clerk
+
+Create a Clerk application and configure:
+
+- `VITE_CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+- The production domain and allowed redirect URLs
+- Any required social sign-in providers
+
+The sign-in route is `/sign-in`, and successful sign-in redirects to
+`/dashboard`.
+
+### PostgreSQL
+
+The current schema contains one `apps` table. Migration files live in
+`drizzle/`.
+
+Use:
 
 ```bash
-npm install
-npm run dev
+npm run db:generate  # Generate a migration after changing src/db/schema.ts
+npx drizzle-kit migrate
+npm run db:studio
 ```
 
-# Building For Production
-
-To build this application for production:
+After applying the storage quota migration to a database containing existing
+builds, backfill their exact R2 object sizes:
 
 ```bash
-npm run build
+npm run db:backfill-storage
 ```
 
-## Testing
+Uploads remain disabled for a user while any of their existing build sizes are
+unresolved.
 
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+`npm run db:ensure` creates the target database when the configured PostgreSQL
+user has permission to do so.
 
-```bash
-npm run test
-```
+### Cloudflare R2
 
-## R2 browser upload CORS
+Buildrop works without bucket CORS by automatically retrying failed direct
+uploads through the authenticated streaming endpoint at `/api/upload`.
 
-Uploads go directly from the browser to R2 using a short-lived presigned `PUT`
-URL when the bucket allows the application origin. Configure the R2 bucket's
-CORS policy to allow each application origin:
+For the fastest upload path, configure R2 CORS so browsers can upload directly:
 
 ```json
 [
@@ -46,243 +149,148 @@ CORS policy to allow each application origin:
 ]
 ```
 
-Set this policy in the Cloudflare dashboard under the R2 bucket's CORS settings.
-Without it, browsers block direct uploads during the CORS preflight and the
-application automatically retries through its streaming same-origin upload
-endpoint.
+Add every local or production origin that should use direct uploads. When CORS
+is missing or rejects the origin, the UI displays
+`Uploading through secure server...` while using the fallback.
 
-## Styling
+## Upload Lifecycle
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+1. The dashboard requests an authenticated upload reservation.
+2. The server validates the file name and size, creates the user-scoped R2 key,
+   and returns a one-hour presigned `PUT` URL.
+3. The browser attempts to upload directly to R2.
+4. If the direct request is blocked, the browser retries through `/api/upload`,
+   which streams the request body to R2 without buffering the entire upload.
+5. Upload progress is calculated from browser `XMLHttpRequest` byte events.
+6. After R2 confirms storage, the server validates object size and content type.
+7. Buildrop downloads the object, extracts metadata, and inserts the database
+   record.
 
-### Removing Tailwind CSS
+The processing phase is intentionally indeterminate. The progress percentage
+only represents file transfer and never guesses metadata-processing progress.
 
-If you prefer not to use Tailwind CSS:
+## Routes
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `npm install @tailwindcss/vite tailwindcss -D`
+| Route | Access | Purpose |
+| --- | --- | --- |
+| `/` | Public | Product landing page |
+| `/sign-in` | Public | Clerk sign-in flow |
+| `/sign-in/sso-callback` | Public | Clerk SSO callback |
+| `/dashboard` | Authenticated | Upload, list, share, and delete builds |
+| `/d/$fileId` | Public | Build download/install page |
+| `/api/upload` | Authenticated | Streaming fallback upload endpoint |
+| `/api/manifest/$fileId` | Public | iOS OTA installation manifest |
 
-## Linting & Formatting
+Public build IDs act as share links. Anyone with `/d/$fileId` can request a
+temporary download URL.
 
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
+## Commands
 
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start Vite development server on port 3000 |
+| `npm run preview` | Preview the production build locally |
+| `npm test` | Run the Vitest suite once |
+| `npm run build` | Build client, SSR, and Nitro server output |
+| `npm run start` | Start the built Nitro server |
+| `npm run check` | Run Biome checks |
+| `npm run lint` | Run Biome linting |
+| `npm run format` | Run Biome formatting |
+| `npm run db:ensure` | Create the configured database if missing |
+| `npm run db:generate` | Generate Drizzle migrations |
+| `npm run db:migrate` | Ensure the database and apply migrations; currently requires `pnpm` because the script invokes it internally |
+| `npm run db:push` | Push schema changes directly |
+| `npm run db:pull` | Pull an existing database schema |
+| `npm run db:studio` | Open Drizzle Studio |
+| `npm run db:backfill-storage` | Backfill existing build sizes from R2 |
+
+## Verification
+
+Before merging application changes, run:
 
 ```bash
-npm run lint
-npm run format
+npm test
+npm run build
 npm run check
 ```
 
+At the time this documentation was written:
 
-## Deploy to Railway
+- Tests pass.
+- Production build passes.
+- `npm run check` completes with an existing unused `Navigate` import warning
+  in `src/routes/sign-in/sso-callback.tsx` and a Biome schema-version notice.
+- A standalone `npx tsc --noEmit` reports existing project-wide type issues;
+  it is not currently a clean required check.
 
-This project ships with `nixpacks.toml` so Railway detects the build automatically:
+## Deployment
 
-1. Push this repo to GitHub
-2. Visit https://railway.com/new and create a project from your repo
-3. In the **Variables** tab, add the entries from `.env.example` with their production values
-4. Railway runs `vite build` and serves from `dist/client`
+The repository includes `nixpacks.toml` for Node.js 22 deployments such as
+Railway:
 
-Need a database? Click **+ New** in your project to provision Postgres, MySQL, or Redis directly into the same environment — the connection string is auto-injected as `DATABASE_URL`.
+1. Provision PostgreSQL and set `DATABASE_URL`.
+2. Set every variable from `.env.example`.
+3. Apply database migrations before serving production traffic.
+4. Build with `npm run build`.
+5. Start with `npm run start`.
+6. Configure Clerk production domains and redirect URLs.
+7. Optionally configure R2 CORS for direct uploads from the production origin.
 
+Nitro writes the deployable application to `.output/`.
 
-## Setting up Clerk
+## Limits And Security Notes
 
-1. Sign up at [clerk.com](https://clerk.com) and create an application
-2. Copy the **Publishable Key** from the Clerk dashboard
-3. Set it in your `.env.local`:
-   ```bash
-   VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
-   ```
-4. Visit the demo route at `/demo/clerk` once `npm run dev` is running
+- Only `.ipa` and `.apk` file names are accepted.
+- The single-upload limit is currently 5 GiB.
+- Each user has a default total storage limit of 1 GiB.
+- Per-user limits can be changed in PostgreSQL:
 
-### What's wired up
+  ```sql
+  INSERT INTO user_storage_limits (user_id, limit_bytes)
+  VALUES ('clerk-user-id', 2147483648)
+  ON CONFLICT (user_id)
+  DO UPDATE SET limit_bytes = EXCLUDED.limit_bytes, updated_at = now();
+  ```
 
-- **`<ClerkProvider>`** at the app root (`src/integrations/clerk/provider.tsx`) handles auth context for the whole tree
-- **`<SignInButton>` / `<UserButton>`** in the header swap based on auth state
-- **`/demo/clerk`** shows Clerk's prebuilt sign-in UI and a signed-in greeting
+  Delete the override row to restore the default 1 GiB limit.
+- R2 object keys are scoped under `<clerk-user-id>/<build-id>/`.
+- Upload completion validates the stored object size and content type.
+- The fallback upload endpoint requires Clerk authentication and validates key
+  ownership.
+- Build download pages are intentionally public.
+- Metadata extraction currently downloads the full stored object into server
+  memory and writes it to a temporary directory. Practical upload size is
+  therefore constrained by the server's memory and disk, even though the
+  transfer limit is 5 GiB.
+- There is no background job queue. Metadata extraction happens synchronously
+  after upload.
 
-### Protecting a route
+## Troubleshooting
 
-Wrap any component in `<SignedIn>` / `<SignedOut>`:
+### Upload switches to the secure server
 
-```tsx
-import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react'
+R2 rejected or could not receive the browser's direct request, commonly because
+bucket CORS does not include the current origin. The upload should continue
+through the streaming fallback.
 
-function ProtectedPage() {
-  return (
-    <>
-      <SignedIn>
-        <YourPageContent />
-      </SignedIn>
-      <SignedOut>
-        <RedirectToSignIn />
-      </SignedOut>
-    </>
-  )
-}
-```
+### Upload fails after reaching 100%
 
-For server-side checks (route loaders, server functions), see the Clerk docs on [`auth()`](https://clerk.com/docs/references/backend/auth).
+The browser finished sending bytes, but storage confirmation or metadata
+processing failed. Check server logs, R2 credentials, server memory/disk, and
+the uploaded package validity.
 
-### Production checklist
+### Unauthorized upload fallback
 
-- Replace the test keys with **production keys** from a dedicated production Clerk instance
-- Configure your production domain under **Domains** in the Clerk dashboard
-- Set up social providers (Google, GitHub, etc.) under **User & Authentication → Social Connections**
+Confirm the browser has an active Clerk session and that
+`VITE_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` belong to the same Clerk
+application.
 
+### Database connection or migration failure
 
+Verify `DATABASE_URL`, confirm the database exists, and ensure the configured
+user can connect and run migrations.
 
-## Routing
+## Repository Guidance
 
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+Coding-agent and contributor-specific instructions live in
+[AGENTS.md](AGENTS.md).

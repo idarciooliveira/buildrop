@@ -1,13 +1,21 @@
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { BrandLogo } from "../components/brand-logo";
+
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
 	return (
-		<main className="min-h-screen bg-slate-950 text-white">
-			<section className="mx-auto flex min-h-screen max-w-5xl flex-col justify-center px-6 py-16">
+		<main className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
+			<div className="pointer-events-none absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-cyan-400/10 blur-3xl" />
+			<section className="relative mx-auto grid min-h-screen max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-[1.15fr_0.85fr]">
 				<div className="max-w-3xl">
+					<BrandLogo
+						className="mb-12 text-white"
+						markClassName="h-12 w-12"
+						textClassName="text-xl"
+					/>
 					<p className="mb-4 inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-medium text-cyan-100">
 						Build drops for iOS and Android testers
 					</p>
@@ -36,6 +44,14 @@ function Home() {
 							</Link>
 						</SignedOut>
 					</div>
+				</div>
+				<div className="relative mx-auto hidden w-full max-w-md lg:block">
+					<div className="absolute inset-16 rounded-full bg-cyan-300/20 blur-3xl" />
+					<img
+						alt="Buildrop 3D logo"
+						className="relative w-full drop-shadow-[0_30px_45px_rgba(34,211,238,0.22)]"
+						src="/brand/buildrop-mark.png"
+					/>
 				</div>
 			</section>
 		</main>

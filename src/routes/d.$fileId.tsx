@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { BrandLogo } from "../components/brand-logo";
 import { getDownloadUrl, getPublicApp } from "../lib/apps";
 
 export const Route = createFileRoute("/d/$fileId")({
@@ -72,6 +73,13 @@ function DownloadPage() {
 
 	return (
 		<main className="min-h-screen bg-slate-950 px-6 py-12 text-white">
+			<div className="mx-auto mb-8 flex max-w-xl justify-center">
+				<BrandLogo
+					className="text-white"
+					markClassName="h-10 w-10"
+					textClassName="text-lg"
+				/>
+			</div>
 			<section className="mx-auto max-w-xl rounded-[2rem] border border-white/10 bg-white/[0.06] p-8 shadow-2xl backdrop-blur">
 				<div className="flex flex-col items-center text-center">
 					{app.metadata.icon ? (

@@ -44,6 +44,9 @@ export const beginUpload = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		const { requireUserId } = await import("./auth");
 		const { createUploadUrl } = await import("./r2");
+		const { createUploadReservation, releaseUploadReservation } = await import(
+			"./storage-quota"
+		);
 		const userId = await requireUserId();
 		const platform = platformFromFileName(data.fileName);
 
@@ -54,17 +57,27 @@ export const beginUpload = createServerFn({ method: "POST" })
 		const id = nanoid(8);
 		const safeFileName = cleanFileName(data.fileName);
 		const r2Key = `${userId}/${id}/${safeFileName}`;
-
-		return {
+		await createUploadReservation({
+			fileSizeBytes: data.fileSize,
 			id,
-			platform,
-			r2Key,
-			uploadUrl: await createUploadUrl({
-				key: r2Key,
+			userId,
+		});
+
+		try {
+			return {
+				id,
 				platform,
-				size: data.fileSize,
-			}),
-		};
+				r2Key,
+				uploadUrl: await createUploadUrl({
+					key: r2Key,
+					platform,
+					size: data.fileSize,
+				}),
+			};
+		} catch (error) {
+			await releaseUploadReservation(id, userId);
+			throw error;
+		}
 	});
 
 export const completeUpload = createServerFn({ method: "POST" })
@@ -87,6 +100,7 @@ export const completeUpload = createServerFn({ method: "POST" })
 		const { requireUserId } = await import("./auth");
 		const { extractMetadata } = await import("./metadata");
 		const { getObjectBytes, getObjectInfo } = await import("./r2");
+		const { insertAppAndConsumeReservation } = await import("./storage-quota");
 		const userId = await requireUserId();
 		const platform = platformFromFileName(data.fileName);
 
@@ -115,20 +129,28 @@ export const completeUpload = createServerFn({ method: "POST" })
 			platform,
 		});
 
-		const [app] = await db
-			.insert(apps)
-			.values({
+		const app = await insertAppAndConsumeReservation({
+			app: {
 				fileName: data.fileName,
 				id: data.id,
 				metadata,
 				platform,
 				r2Key: data.r2Key,
-				userId,
-			})
-			.returning();
+			},
+			fileSizeBytes: object.contentLength,
+			userId,
+		});
 
 		return app;
 	});
+
+export const getMyStorageSummary = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const { requireUserId } = await import("./auth");
+		const { getUserStorageSummary } = await import("./storage-quota");
+		return getUserStorageSummary(await requireUserId());
+	},
+);
 
 export const listMyApps = createServerFn({ method: "GET" }).handler(
 	async () => {

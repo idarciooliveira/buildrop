@@ -1,6 +1,8 @@
 import { SignIn } from "@clerk/clerk-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { BrandLogo } from "../components/brand-logo";
+
 export const Route = createFileRoute("/sign-in")({ component: SignInPage });
 
 // slate-900 in hex — must match colorBackground so Clerk's footer doesn't flash a different tone
@@ -12,6 +14,11 @@ function SignInPage() {
 			<section className="mx-auto grid min-h-screen max-w-6xl gap-12 px-6 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
 				{/* Left — marketing copy */}
 				<div className="max-w-xl">
+					<BrandLogo
+						className="mb-10 text-white"
+						markClassName="h-12 w-12"
+						textClassName="text-xl"
+					/>
 					<Link
 						className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-300"
 						to="/"

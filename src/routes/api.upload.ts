@@ -35,6 +35,9 @@ export const Route = createFileRoute("/api/upload")({
 				try {
 					const { requireUserId } = await import("../lib/auth");
 					const { putObjectStream } = await import("../lib/r2");
+					const { assertUploadReservation } = await import(
+						"../lib/storage-quota"
+					);
 					const url = new URL(request.url);
 					const fileName = requiredQueryParam(url, "fileName");
 					const fileSize = requiredFileSize(url);
@@ -63,6 +66,12 @@ export const Route = createFileRoute("/api/upload")({
 					if (!request.body) {
 						return new Response("Upload body is required", { status: 400 });
 					}
+
+					await assertUploadReservation({
+						fileSizeBytes: fileSize,
+						id,
+						userId,
+					});
 
 					await putObjectStream({
 						body: request.body,

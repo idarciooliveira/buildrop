@@ -2,6 +2,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useTransition } from "react";
 
+import { BrandLogo } from "../components/brand-logo";
 import {
 	UploadProgressPanel,
 	type UploadState,
@@ -11,6 +12,7 @@ import {
 	beginUpload,
 	completeUpload,
 	deleteMyApp,
+	getMyStorageSummary,
 	listMyApps,
 } from "../lib/apps";
 import { contentTypeForPlatform } from "../lib/platform";
@@ -22,12 +24,26 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 type AppRow = Awaited<ReturnType<typeof listMyApps>>[number];
+type StorageSummary = Awaited<ReturnType<typeof getMyStorageSummary>>;
 
 function formatDate(value: Date | string) {
 	return new Intl.DateTimeFormat(undefined, {
 		dateStyle: "medium",
 		timeStyle: "short",
 	}).format(new Date(value));
+}
+
+function formatBytes(value: number) {
+	const units = ["B", "KB", "MB", "GB", "TB"];
+	let amount = value;
+	let unitIndex = 0;
+
+	while (amount >= 1024 && unitIndex < units.length - 1) {
+		amount /= 1024;
+		unitIndex++;
+	}
+
+	return `${amount.toFixed(unitIndex === 0 || amount >= 10 ? 1 : 2)} ${units[unitIndex]}`;
 }
 
 function appTitle(app: AppRow) {
@@ -66,6 +82,7 @@ function DashboardRoute() {
 function Dashboard() {
 	const { isLoaded, isSignedIn } = useAuth();
 	const [apps, setApps] = useState<Array<AppRow>>([]);
+	const [storage, setStorage] = useState<StorageSummary | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [appToDelete, setAppToDelete] = useState<AppRow | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -80,7 +97,12 @@ function Dashboard() {
 	function refreshApps() {
 		startTransition(async () => {
 			try {
-				setApps(await listMyApps());
+				const [nextApps, nextStorage] = await Promise.all([
+					listMyApps(),
+					getMyStorageSummary(),
+				]);
+				setApps(nextApps);
+				setStorage(nextStorage);
 				setError(null);
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Failed to load apps");
@@ -95,7 +117,12 @@ function Dashboard() {
 
 		startTransition(async () => {
 			try {
-				setApps(await listMyApps());
+				const [nextApps, nextStorage] = await Promise.all([
+					listMyApps(),
+					getMyStorageSummary(),
+				]);
+				setApps(nextApps);
+				setStorage(nextStorage);
 				setError(null);
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Failed to load apps");
@@ -228,6 +255,7 @@ function Dashboard() {
 		try {
 			await deleteMyApp({ data: { id: appToDelete.id } });
 			setApps((current) => current.filter((app) => app.id !== appToDelete.id));
+			setStorage(await getMyStorageSummary());
 			setAppToDelete(null);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Delete failed");
@@ -253,9 +281,7 @@ function Dashboard() {
 		<main className="min-h-screen bg-slate-50">
 			<header className="border-b border-slate-200 bg-white">
 				<div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-					<Link className="text-lg font-bold" to="/">
-						Buildrop
-					</Link>
+					<BrandLogo markClassName="h-9 w-9" textClassName="text-lg" />
 					<HeaderUser />
 				</div>
 			</header>
@@ -277,12 +303,59 @@ function Dashboard() {
 						<input
 							accept=".ipa,.apk"
 							className="sr-only"
-							disabled={isUploading}
+							disabled={
+								isUploading ||
+								storage?.remainingBytes === 0 ||
+								storage?.hasUnresolvedSizes
+							}
 							onChange={onUpload}
 							type="file"
 						/>
 					</label>
 				</div>
+
+				{storage ? (
+					<div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+						<div className="flex items-end justify-between gap-4">
+							<div>
+								<p className="text-sm font-semibold text-slate-950">Storage</p>
+								<p className="mt-1 text-sm text-slate-500">
+									{storage.hasUnresolvedSizes
+										? "Calculating existing build sizes"
+										: `${formatBytes(storage.usedBytes)} of `}
+									{!storage.hasUnresolvedSizes
+										? formatBytes(storage.limitBytes)
+										: null}{" "}
+									{!storage.hasUnresolvedSizes ? "used" : null}
+								</p>
+							</div>
+							<p className="text-sm font-semibold text-slate-700">
+								{storage.hasUnresolvedSizes
+									? "Uploads temporarily disabled"
+									: `${formatBytes(storage.remainingBytes)} remaining`}
+							</p>
+						</div>
+						<div
+							aria-label="Storage usage"
+							aria-valuemax={storage.limitBytes}
+							aria-valuemin={0}
+							aria-valuenow={
+								storage.hasUnresolvedSizes ? undefined : storage.usedBytes
+							}
+							className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200"
+							role="progressbar"
+						>
+							<div
+								className="h-full rounded-full bg-cyan-500"
+								style={{
+									width: storage.hasUnresolvedSizes
+										? "100%"
+										: `${Math.min(100, (storage.usedBytes / storage.limitBytes) * 100)}%`,
+								}}
+							/>
+						</div>
+					</div>
+				) : null}
 
 				{error ? (
 					<div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
@@ -325,7 +398,10 @@ function Dashboard() {
 											</div>
 											<p className="mt-1 text-sm text-slate-500">
 												Version {appVersion(app)} - Uploaded{" "}
-												{formatDate(app.createdAt)}
+												{formatDate(app.createdAt)} -{" "}
+												{app.fileSizeBytes === null
+													? "Size pending"
+													: formatBytes(app.fileSizeBytes)}
 											</p>
 										</div>
 									</div>
