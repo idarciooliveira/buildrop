@@ -24,12 +24,14 @@ finalization and metadata extraction happen synchronously in the request flow.
 | `src/lib/upload-file.ts` | Browser XHR upload, progress events, cancellation, fallback |
 | `src/components/upload-progress-panel.tsx` | Upload state and progress presentation |
 | `src/lib/apps.ts` | Server functions for upload reservation/completion and build CRUD |
+| `src/lib/shares.ts` | Server functions for public release-page CRUD and lookup |
 | `src/routes/api.upload.ts` | Authenticated same-origin streaming fallback |
 | `src/lib/r2.ts` | R2 client, signed URLs, streaming upload, object reads/deletes |
 | `src/lib/metadata.ts` | IPA/APK metadata extraction and normalization |
 | `src/lib/auth.ts` | Clerk server-side user authentication |
 | `src/db/schema.ts` | PostgreSQL schema and metadata types |
 | `src/routes/d.$fileId.tsx` | Public download/install page |
+| `src/routes/share.$shareId.tsx` | Public unlisted release page for multiple builds |
 | `src/routes/api.manifest.$fileId.ts` | Public iOS OTA manifest |
 | `src/routeTree.gen.ts` | Generated TanStack route tree; do not edit manually |
 
@@ -54,6 +56,29 @@ without an override receive the application default of 1 GiB.
 `upload_reservations` contains one-hour reservations for uploads that have
 started but do not yet have an `apps` row. Reservations prevent concurrent
 uploads from collectively exceeding the user's quota.
+
+`app_shares` stores the public release-page bundle itself:
+
+| Field | Meaning |
+| --- | --- |
+| `shareId` | Opaque public credential used in `/share/$shareId` |
+| `userId` | Clerk user who owns and curates the bundle |
+| `title` | Required release-page title |
+| `description` | Optional release-page description |
+| `createdAt` | Bundle creation time |
+| `updatedAt` | Last bundle edit time |
+
+`app_share_items` stores the ordered membership of each bundle:
+
+| Field | Meaning |
+| --- | --- |
+| `shareId` | Foreign key to `app_shares.shareId` |
+| `appId` | Foreign key to `apps.id` |
+| `itemOrder` | Display order in the public page |
+| `createdAt` | Time the bundle item row was created |
+
+Deleting an app cascades to `app_share_items`, so deleted builds disappear from
+any public release page automatically while the bundle itself remains valid.
 
 The R2 key format is:
 
@@ -170,6 +195,24 @@ iOS builds additionally expose:
 The build ID is the share credential. There is no per-download authentication
 or expiration on the public page itself.
 
+## Release Page Flow
+
+Release pages group multiple existing builds behind one opaque share ID.
+
+```text
+Authenticated owner -> /dashboard -> createShare/updateShare
+Visitor -> /share/$shareId -> public bundle metadata
+Visitor -> getDownloadUrl or /api/manifest/$fileId -> expiring build artifact
+```
+
+The dashboard checks ownership before creating or updating a bundle. The public
+page loader reads only the bundle and its current items, so it stays unguarded
+and does not require Clerk authentication.
+
+The bundle page does not preload signed URLs for every build. Android download
+URLs are generated only when the user clicks a download action, and iOS uses
+the existing manifest route for install flow.
+
 ## Authentication And Trust Boundaries
 
 Authenticated operations:
@@ -185,10 +228,12 @@ Public operations:
 - Read build metadata by ID
 - Request an expiring download URL by ID
 - Request an iOS install manifest by ID
+- Read public release-page metadata by share ID
+- Request release-page build downloads through existing build IDs
 
 Never trust browser-provided `r2Key`, file size, content type, file name, or
-build ID without server validation. Existing validation in `apps.ts` and
-`api.upload.ts` is part of the security boundary.
+build ID without server validation. Existing validation in `apps.ts`,
+`shares.ts`, and `api.upload.ts` is part of the security boundary.
 
 ## Routing And Generated Code
 

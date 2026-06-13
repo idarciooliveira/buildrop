@@ -1,8 +1,10 @@
 import {
 	bigint,
 	index,
+	integer,
 	jsonb,
 	pgTable,
+	primaryKey,
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
@@ -31,6 +33,44 @@ export const apps = pgTable("apps", {
 		.defaultNow()
 		.notNull(),
 });
+
+export const appShares = pgTable(
+	"app_shares",
+	{
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		description: text(),
+		shareId: text("share_id").primaryKey(),
+		title: text().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		userId: text("user_id").notNull(),
+	},
+	(table) => [index("app_shares_user_id_idx").on(table.userId)],
+);
+
+export const appShareItems = pgTable(
+	"app_share_items",
+	{
+		appId: text("app_id")
+			.notNull()
+			.references(() => apps.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		itemOrder: integer("item_order").notNull(),
+		shareId: text("share_id")
+			.notNull()
+			.references(() => appShares.shareId, { onDelete: "cascade" }),
+	},
+	(table) => [
+		index("app_share_items_app_id_idx").on(table.appId),
+		index("app_share_items_share_id_idx").on(table.shareId),
+		primaryKey({ columns: [table.shareId, table.appId] }),
+	],
+);
 
 export const userStorageLimits = pgTable("user_storage_limits", {
 	userId: text("user_id").primaryKey(),

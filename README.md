@@ -12,6 +12,7 @@ download pages.
 - Real byte-based upload progress with cancellation
 - Direct browser-to-R2 uploads with an automatic streaming server fallback
 - Public download pages and expiring R2 download URLs
+- Public unlisted release pages that group multiple builds under one link
 - iOS over-the-air installation manifests
 - Per-user build listing and deletion
 - Per-user storage quotas with a default 1 GiB limit
@@ -178,11 +179,16 @@ only represents file transfer and never guesses metadata-processing progress.
 | `/sign-in/sso-callback` | Public | Clerk SSO callback |
 | `/dashboard` | Authenticated | Upload, list, share, and delete builds |
 | `/d/$fileId` | Public | Build download/install page |
+| `/share/$shareId` | Public | Unlisted release page for multiple builds |
 | `/api/upload` | Authenticated | Streaming fallback upload endpoint |
 | `/api/manifest/$fileId` | Public | iOS OTA installation manifest |
 
 Public build IDs act as share links. Anyone with `/d/$fileId` can request a
 temporary download URL.
+
+Public release page IDs act as the credential for the bundle. Anyone with
+`/share/$shareId` can open the curated page and download or install the
+included builds without signing in.
 
 ## Commands
 

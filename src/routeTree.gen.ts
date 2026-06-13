@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as ReleasePagesRouteImport } from './routes/release-pages'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SignInSsoCallbackRouteImport } from './routes/sign-in/sso-callback'
+import { Route as ShareShareIdRouteImport } from './routes/share.$shareId'
 import { Route as DFileIdRouteImport } from './routes/d.$fileId'
 import { Route as ApiUploadRouteImport } from './routes/api.upload'
 import { Route as ApiManifestFileIdRouteImport } from './routes/api.manifest.$fileId'
@@ -20,6 +22,11 @@ import { Route as ApiManifestFileIdRouteImport } from './routes/api.manifest.$fi
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReleasePagesRoute = ReleasePagesRouteImport.update({
+  id: '/release-pages',
+  path: '/release-pages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -36,6 +43,11 @@ const SignInSsoCallbackRoute = SignInSsoCallbackRouteImport.update({
   id: '/sso-callback',
   path: '/sso-callback',
   getParentRoute: () => SignInRoute,
+} as any)
+const ShareShareIdRoute = ShareShareIdRouteImport.update({
+  id: '/share/$shareId',
+  path: '/share/$shareId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DFileIdRoute = DFileIdRouteImport.update({
   id: '/d/$fileId',
@@ -56,18 +68,22 @@ const ApiManifestFileIdRoute = ApiManifestFileIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/release-pages': typeof ReleasePagesRoute
   '/sign-in': typeof SignInRouteWithChildren
   '/api/upload': typeof ApiUploadRoute
   '/d/$fileId': typeof DFileIdRoute
+  '/share/$shareId': typeof ShareShareIdRoute
   '/sign-in/sso-callback': typeof SignInSsoCallbackRoute
   '/api/manifest/$fileId': typeof ApiManifestFileIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/release-pages': typeof ReleasePagesRoute
   '/sign-in': typeof SignInRouteWithChildren
   '/api/upload': typeof ApiUploadRoute
   '/d/$fileId': typeof DFileIdRoute
+  '/share/$shareId': typeof ShareShareIdRoute
   '/sign-in/sso-callback': typeof SignInSsoCallbackRoute
   '/api/manifest/$fileId': typeof ApiManifestFileIdRoute
 }
@@ -75,9 +91,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/release-pages': typeof ReleasePagesRoute
   '/sign-in': typeof SignInRouteWithChildren
   '/api/upload': typeof ApiUploadRoute
   '/d/$fileId': typeof DFileIdRoute
+  '/share/$shareId': typeof ShareShareIdRoute
   '/sign-in/sso-callback': typeof SignInSsoCallbackRoute
   '/api/manifest/$fileId': typeof ApiManifestFileIdRoute
 }
@@ -86,27 +104,33 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/release-pages'
     | '/sign-in'
     | '/api/upload'
     | '/d/$fileId'
+    | '/share/$shareId'
     | '/sign-in/sso-callback'
     | '/api/manifest/$fileId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
+    | '/release-pages'
     | '/sign-in'
     | '/api/upload'
     | '/d/$fileId'
+    | '/share/$shareId'
     | '/sign-in/sso-callback'
     | '/api/manifest/$fileId'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/release-pages'
     | '/sign-in'
     | '/api/upload'
     | '/d/$fileId'
+    | '/share/$shareId'
     | '/sign-in/sso-callback'
     | '/api/manifest/$fileId'
   fileRoutesById: FileRoutesById
@@ -114,9 +138,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  ReleasePagesRoute: typeof ReleasePagesRoute
   SignInRoute: typeof SignInRouteWithChildren
   ApiUploadRoute: typeof ApiUploadRoute
   DFileIdRoute: typeof DFileIdRoute
+  ShareShareIdRoute: typeof ShareShareIdRoute
   ApiManifestFileIdRoute: typeof ApiManifestFileIdRoute
 }
 
@@ -127,6 +153,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/release-pages': {
+      id: '/release-pages'
+      path: '/release-pages'
+      fullPath: '/release-pages'
+      preLoaderRoute: typeof ReleasePagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -149,6 +182,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sign-in/sso-callback'
       preLoaderRoute: typeof SignInSsoCallbackRouteImport
       parentRoute: typeof SignInRoute
+    }
+    '/share/$shareId': {
+      id: '/share/$shareId'
+      path: '/share/$shareId'
+      fullPath: '/share/$shareId'
+      preLoaderRoute: typeof ShareShareIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/d/$fileId': {
       id: '/d/$fileId'
@@ -188,9 +228,11 @@ const SignInRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  ReleasePagesRoute: ReleasePagesRoute,
   SignInRoute: SignInRouteWithChildren,
   ApiUploadRoute: ApiUploadRoute,
   DFileIdRoute: DFileIdRoute,
+  ShareShareIdRoute: ShareShareIdRoute,
   ApiManifestFileIdRoute: ApiManifestFileIdRoute,
 }
 export const routeTree = rootRouteImport

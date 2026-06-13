@@ -1,14 +1,20 @@
 import { useAuth } from "@clerk/clerk-react";
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+	type ChangeEvent,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+	useTransition,
+} from "react";
 
-import { BrandLogo } from "../components/brand-logo";
+import { AppShellHeader } from "../components/app-shell-header";
 import { BuildShareDialog } from "../components/build-share-dialog";
 import {
 	UploadProgressPanel,
 	type UploadState,
 } from "../components/upload-progress-panel";
-import HeaderUser from "../integrations/clerk/header-user";
 import {
 	beginUpload,
 	completeUpload,
@@ -56,6 +62,7 @@ function appVersion(app: AppRow) {
 	const parts = [app.metadata.version, app.metadata.buildNumber].filter(
 		Boolean,
 	);
+
 	return parts.length
 		? parts.join(" (") + (parts.length > 1 ? ")" : "")
 		: "Unknown";
@@ -81,21 +88,21 @@ function DashboardRoute() {
 	return <Dashboard />;
 }
 
-function Dashboard() {
+export function Dashboard() {
 	const { isLoaded, isSignedIn } = useAuth();
 	const [apps, setApps] = useState<Array<AppRow>>([]);
 	const [storage, setStorage] = useState<StorageSummary | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [copyNotice, setCopyNotice] = useState<string | null>(null);
 	const [copiedAppId, setCopiedAppId] = useState<string | null>(null);
-	const [shareTarget, setShareTarget] = useState<{
+	const [buildShareTarget, setBuildShareTarget] = useState<{
 		fileName: string;
 		platform: AppRow["platform"];
 		shareUrl: string;
 		title: string;
 	} | null>(null);
 	const [appToDelete, setAppToDelete] = useState<AppRow | null>(null);
-	const [isDeleting, setIsDeleting] = useState(false);
+	const [isDeletingApp, setIsDeletingApp] = useState(false);
 	const [uploadState, setUploadState] = useState<UploadState | null>(null);
 	const copyNoticeTimeoutRef = useRef<number | null>(null);
 	const abortUploadRef = useRef<(() => void) | null>(null);
@@ -105,7 +112,7 @@ function Dashboard() {
 		uploadState.phase !== "completed" &&
 		uploadState.phase !== "failed";
 
-	function refreshApps() {
+	const loadDashboard = useCallback(() => {
 		startTransition(async () => {
 			try {
 				const [nextApps, nextStorage] = await Promise.all([
@@ -116,30 +123,20 @@ function Dashboard() {
 				setStorage(nextStorage);
 				setError(null);
 			} catch (err) {
-				setError(err instanceof Error ? err.message : "Failed to load apps");
+				setError(
+					err instanceof Error ? err.message : "Failed to load dashboard",
+				);
 			}
 		});
-	}
+	}, []);
 
 	useEffect(() => {
 		if (!isLoaded || !isSignedIn) {
 			return;
 		}
 
-		startTransition(async () => {
-			try {
-				const [nextApps, nextStorage] = await Promise.all([
-					listMyApps(),
-					getMyStorageSummary(),
-				]);
-				setApps(nextApps);
-				setStorage(nextStorage);
-				setError(null);
-			} catch (err) {
-				setError(err instanceof Error ? err.message : "Failed to load apps");
-			}
-		});
-	}, [isLoaded, isSignedIn]);
+		loadDashboard();
+	}, [isLoaded, isSignedIn, loadDashboard]);
 
 	useEffect(() => {
 		if (uploadState?.phase !== "completed") {
@@ -158,7 +155,7 @@ function Dashboard() {
 		};
 	}, []);
 
-	async function onUpload(event: React.ChangeEvent<HTMLInputElement>) {
+	async function onUpload(event: ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0];
 		event.target.value = "";
 
@@ -240,7 +237,7 @@ function Dashboard() {
 					r2Key: upload.r2Key,
 				},
 			});
-			refreshApps();
+			loadDashboard();
 			setUploadState((current) => ({
 				fileName: file.name,
 				loadedBytes: file.size,
@@ -267,23 +264,24 @@ function Dashboard() {
 		}
 	}
 
-	async function onDelete() {
+	async function onDeleteApp() {
 		if (!appToDelete) return;
 
-		setIsDeleting(true);
+		setIsDeletingApp(true);
 		try {
 			await deleteMyApp({ data: { id: appToDelete.id } });
 			setApps((current) => current.filter((app) => app.id !== appToDelete.id));
 			setStorage(await getMyStorageSummary());
 			setAppToDelete(null);
+			loadDashboard();
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Delete failed");
 		} finally {
-			setIsDeleting(false);
+			setIsDeletingApp(false);
 		}
 	}
 
-	async function copyLink(id: string) {
+	async function copyBuildLink(id: string) {
 		try {
 			const url = buildAppShareUrl(window.location.origin, id);
 			await navigator.clipboard.writeText(url);
@@ -302,8 +300,8 @@ function Dashboard() {
 		}
 	}
 
-	function openShareDialog(app: AppRow) {
-		setShareTarget({
+	function openBuildShareDialog(app: AppRow) {
+		setBuildShareTarget({
 			fileName: app.fileName,
 			platform: app.platform,
 			shareUrl: buildAppShareUrl(window.location.origin, app.id),
@@ -321,12 +319,7 @@ function Dashboard() {
 
 	return (
 		<main className="min-h-screen bg-slate-50">
-			<header className="border-b border-slate-200 bg-white">
-				<div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-					<BrandLogo markClassName="h-9 w-9" textClassName="text-lg" />
-					<HeaderUser />
-				</div>
-			</header>
+			<AppShellHeader active="dashboard" />
 
 			<section className="mx-auto max-w-6xl px-6 py-10">
 				<div className="flex flex-col gap-6 rounded-3xl bg-slate-950 p-8 text-white shadow-xl sm:flex-row sm:items-center sm:justify-between">
@@ -456,17 +449,17 @@ function Dashboard() {
 											</p>
 										</div>
 									</div>
-									<div className="flex flex-wrap gap-2">
+									<div className="flex flex-wrap justify-start gap-2 md:justify-end">
 										<button
 											className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold transition hover:bg-slate-50"
-											onClick={() => copyLink(app.id)}
+											onClick={() => copyBuildLink(app.id)}
 											type="button"
 										>
 											{copiedAppId === app.id ? "Copied" : "Copy link"}
 										</button>
 										<button
 											className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100"
-											onClick={() => openShareDialog(app)}
+											onClick={() => openBuildShareDialog(app)}
 											type="button"
 										>
 											QR code
@@ -492,6 +485,7 @@ function Dashboard() {
 					)}
 				</div>
 			</section>
+
 			{uploadState ? (
 				<UploadProgressPanel
 					onDismiss={() => setUploadState(null)}
@@ -499,16 +493,27 @@ function Dashboard() {
 					upload={uploadState}
 				/>
 			) : null}
+
+			{buildShareTarget ? (
+				<BuildShareDialog
+					fileName={buildShareTarget.fileName}
+					onDismiss={() => setBuildShareTarget(null)}
+					platform={buildShareTarget.platform}
+					shareUrl={buildShareTarget.shareUrl}
+					title={buildShareTarget.title}
+				/>
+			) : null}
+
 			{appToDelete ? (
 				<div
-					aria-labelledby="delete-dialog-title"
+					aria-labelledby="delete-build-dialog-title"
 					aria-modal="true"
 					className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4"
 					onKeyDown={(event) => {
-						if (event.key === "Escape" && !isDeleting) setAppToDelete(null);
+						if (event.key === "Escape" && !isDeletingApp) setAppToDelete(null);
 					}}
 					onMouseDown={(event) => {
-						if (event.target === event.currentTarget && !isDeleting) {
+						if (event.target === event.currentTarget && !isDeletingApp) {
 							setAppToDelete(null);
 						}
 					}}
@@ -517,7 +522,7 @@ function Dashboard() {
 					<div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
 						<h2
 							className="text-xl font-bold text-slate-950"
-							id="delete-dialog-title"
+							id="delete-build-dialog-title"
 						>
 							Delete build?
 						</h2>
@@ -531,7 +536,7 @@ function Dashboard() {
 						<div className="mt-6 flex justify-end gap-3">
 							<button
 								className="rounded-xl border border-slate-200 px-4 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-								disabled={isDeleting}
+								disabled={isDeletingApp}
 								onClick={() => setAppToDelete(null)}
 								type="button"
 							>
@@ -539,24 +544,15 @@ function Dashboard() {
 							</button>
 							<button
 								className="rounded-xl bg-red-600 px-4 py-2 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-								disabled={isDeleting}
-								onClick={onDelete}
+								disabled={isDeletingApp}
+								onClick={onDeleteApp}
 								type="button"
 							>
-								{isDeleting ? "Deleting..." : "Delete build"}
+								{isDeletingApp ? "Deleting..." : "Delete build"}
 							</button>
 						</div>
 					</div>
 				</div>
-			) : null}
-			{shareTarget ? (
-				<BuildShareDialog
-					fileName={shareTarget.fileName}
-					onDismiss={() => setShareTarget(null)}
-					platform={shareTarget.platform}
-					shareUrl={shareTarget.shareUrl}
-					title={shareTarget.title}
-				/>
 			) : null}
 		</main>
 	);
